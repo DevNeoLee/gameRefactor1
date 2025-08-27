@@ -126,7 +126,7 @@ const Instruction = () => {
                             <div className={styles.videoContainer}>
                                 <video ref={videoRef} width="100%" controls>
                                     {
-                                        <source src="https://flood-m-432e1143f338.herokuapp.com/instructionsNearMiss.mp4" type="video/mp4" />
+                                        <source src="/instructionsNearMiss.mp4" type="video/mp4" />
                                     }
                                 </video>
                             </div>

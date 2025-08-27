@@ -1,0 +1,224 @@
+# Game Refactor Project Structure
+
+## Overview
+This project is a game application composed of Node.js backend and React frontend. It's designed as an experimental game system that provides user session management, game progression, data collection, and other features.
+
+## Root Directory Structure
+
+```
+gameRefactor/
+├── app.js                 # Main Express server application
+├── package.json          # Backend dependencies and scripts
+├── .gitignore           # Git ignore files
+├── rest.http            # API testing HTTP request file
+├── .cursor/             # Cursor IDE settings and rules
+├── config/              # Environment-specific configuration files
+├── model/               # MongoDB data models
+├── router/              # Express routers
+├── utils/               # Utility functions
+└── frontend/            # React frontend application
+```
+
+## Backend Structure
+
+### Core Files
+- **app.js**: Main server file (59KB, 1685 lines)
+  - Express server configuration
+  - Middleware setup
+  - Router connections
+  - Socket.IO configuration
+
+### Configuration (`config/`)
+- **keys.js**: Default environment variables
+- **keys_dev.js**: Development environment settings
+- **keys_prod.js**: Production environment settings
+
+### Data Models (`model/`)
+- **game.js**: Game data model (1.3KB, 64 lines)
+- **session.js**: User session model (859B, 39 lines)
+
+### API Routes (`router/`)
+- **gameRouter.js**: Game-related API endpoints (3.0KB, 86 lines)
+- **sessionRouter.js**: Session management API endpoints (4.1KB, 111 lines)
+
+### Utilities (`utils/`)
+- **dbConnect.js**: MongoDB connection configuration (390B, 15 lines)
+- **logger.js**: Logging utility (195B, 11 lines)
+
+## Frontend Structure (`frontend/`)
+
+### Core Files
+- **package.json**: React dependencies and scripts
+- **src/index.js**: React application entry point
+- **src/App.js**: Main application component
+- **src/App.scss**: Main stylesheet
+- **src/AppContext.js**: React Context API configuration
+
+### Components (`src/components/`)
+Core UI components of the game system:
+
+#### Game Components
+- **Game/**: Game progression related components
+  - Round.js (8.6KB, 171 lines) - Main game round logic
+  - GameStop.js (6.6KB, 123 lines) - Game stop functionality
+  - RoleSelection.js (1.5KB, 34 lines) - Player role selection
+  - ParticipantsReady.js (702B, 14 lines) - Participant readiness check
+  - gamestop.module.css (1.5KB, 95 lines) - Game stop styles
+  - practice.module.css (2.9KB, 173 lines) - Practice mode styles
+
+#### Survey & Data Collection
+- **AdviceSurvey/**: Advice survey components
+  - index.js (9.9KB, 231 lines) - Main advice survey component
+  - DataAdviceSurvey.js (539B, 15 lines) - Survey data structure
+  - adviceSurvey.module.css (2.7KB, 162 lines) - Survey styles
+- **MemorySurvey/**: Memory survey components
+  - index.js (10KB, 241 lines) - Main memory survey component
+  - DataSurveyGen1.js (2.1KB, 45 lines) - Generation 1 survey data
+  - DataSurveyGen234.js (2.2KB, 45 lines) - Generation 2-4 survey data
+- **NearMissPreSurvey/**: Near Miss pre-survey
+  - index.js (22KB, 393 lines) - Main pre-survey component
+  - data.js (6.2KB, 138 lines) - Pre-survey data structure
+- **NearMissPostSurvey/**: Near Miss post-survey
+  - index.js (17KB, 294 lines) - Main post-survey component
+  - dataBaseline.js (6.6KB, 147 lines) - Baseline survey data
+  - dataTreatment.js (7.9KB, 173 lines) - Treatment survey data
+
+#### Notifications
+- **NearMissNotification/**: Near Miss notifications
+  - CaseHLRN.js (16KB, 356 lines) - High Loss, Risk, Near Miss case
+  - CaseHLVN.js (18KB, 380 lines) - High Loss, Value, Near Miss case
+  - CaseLLRN.js (16KB, 356 lines) - Low Loss, Risk, Near Miss case
+  - CaseLLVN.js (18KB, 375 lines) - Low Loss, Value, Near Miss case
+  - index.js (2.6KB, 81 lines) - Main notification component
+  - postIt.module.css (3.7KB, 192 lines) - Post-it notification styles
+- **DepletionNotification/**: Depletion notifications
+  - index.js (2.0KB, 45 lines) - Depletion notification component
+- **PracticeNotification/**: Practice notifications
+  - index.js (1.5KB, 18 lines) - Practice notification component
+- **TransitionNotification/**: Transition notifications
+  - index.js (4.2KB, 112 lines) - Transition notification component
+  - transition.module.css (900B, 57 lines) - Transition styles
+
+#### UI Components
+- **ProgressBar/**: Progress indicator
+  - index.js (740B, 24 lines) - Progress bar component
+  - progressBar.module.css (952B, 63 lines) - Progress bar styles
+- **ChattingRoom/**: Chat functionality
+  - index.js (11KB, 382 lines) - Chat room component
+  - chattingroom.module.css (0.0B, 0 lines) - Chat room styles
+- **WaitingRoom/**: Waiting room
+  - index.js (4.7KB, 101 lines) - Waiting room component
+- **Stats/**: Statistics display
+  - GamesCompleted.jsx (2.7KB, 48 lines) - Completed games statistics
+  - SessionsAll.jsx (1.8KB, 44 lines) - All sessions statistics
+  - SessionsCompleted.jsx (1.8KB, 45 lines) - Completed sessions statistics
+  - GamesStartedDroppedBeforePractices.jsx (1.6KB, 36 lines) - Games dropped before practice
+  - NeverStartedGames.jsx (743B, 23 lines) - Never started games statistics
+  - GamesStartedDroppedAfterPractices.jsx (2.6KB, 47 lines) - Games dropped after practice
+
+#### Form Components
+- **Radio.js** (644B, 23 lines): Radio button component
+- **Checkbox.js** (559B, 23 lines): Checkbox component
+- **Input.js** (694B, 29 lines): Input field component
+- **Select.js** (565B, 18 lines): Select dropdown component
+- **SelectLarge.js** (1.6KB, 28 lines): Large select component
+- **SelectSmall.js** (1.2KB, 24 lines): Small select component
+- **HorizontalRadioBoxes.js** (1.5KB, 38 lines): Horizontal radio button group
+- **VerticalRadioBoxes.js** (1.3KB, 37 lines): Vertical radio button group
+- **RatingRadioButtons.js** (176B, 11 lines): Rating radio buttons component
+
+#### Additional Components
+- **QuizSolution/**: Quiz solution components
+  - index.js (6.7KB, 184 lines) - Quiz solution component
+  - index.module.css (800B, 51 lines) - Quiz solution styles
+- **QuizSolution2.js** (5.1KB, 150 lines): Alternative quiz solution component
+- **Quizzes2.js** (10KB, 266 lines): Enhanced quiz component
+- **HistoricText/**: Historical text display
+  - index.js (3.3KB, 130 lines) - Historical text component
+- **AdviceText/**: Advice text display
+  - index.js (3.3KB, 130 lines) - Advice text component
+- **DecisionResult/**: Decision result display
+  - index.js (51KB, 993 lines) - Decision result component
+  - decisionresult.module.css (10KB, 619 lines) - Decision result styles
+- **Breadcrumbs.js** (582B, 15 lines): Navigation breadcrumbs component
+
+### Pages (`src/pages/`)
+React Router based page components:
+
+- **Home/**: Homepage
+- **Welcome/**: Welcome page
+- **Instruction/**: Game instructions
+- **Game/**: Main game page
+- **Quizzes/**: Quiz page
+- **Survey/**: Survey page
+- **Stat/**: Statistics page
+- **GoodBye/**: Goodbye page
+- **Dropout/**: Dropout page
+- **Stopped/**: Stopped game page
+- **RandomlyAssigned/**: Random assignment page
+- **NotFound/**: 404 page
+
+### Utilities (`src/utils/`)
+- **functions.js**: Common functions
+- **routes.js**: Routing utilities
+- **socket.js**: Socket.IO client configuration
+
+## Key Technologies
+
+### Backend
+- **Node.js** (>=18.0.0)
+- **Express.js**: Web framework
+- **MongoDB**: Database (Mongoose ODM)
+- **Socket.IO**: Real-time communication
+- **Redis**: Session storage
+- **Helmet**: Security middleware
+- **CORS**: Cross-origin resource sharing
+
+### Frontend
+- **React 18**: UI library
+- **React Router**: Client-side routing
+- **Bootstrap 5**: CSS framework
+- **Sass**: CSS preprocessor
+- **Socket.IO Client**: Real-time communication
+- **Recharts**: Chart library
+- **React Table**: Data table
+- **Axios**: HTTP client
+
+## Development Scripts
+
+### Backend
+- `npm start`: Start production server
+- `npm run server`: Start development server (nodemon)
+- `npm run dev`: Run backend and frontend simultaneously
+
+### Frontend
+- `npm start`: Start development server
+- `npm run build`: Production build
+- `npm test`: Run tests
+
+## Important Notes
+
+1. **Experimental Game System**: This project is designed as a research/experimental game system.
+2. **Near Miss Scenarios**: Contains components to handle various Near Miss cases.
+3. **Data Collection**: Collects survey data, memory tests, game progression data, etc.
+4. **Real-time Communication**: Real-time game progression and chat functionality through Socket.IO.
+5. **Responsive Design**: Mobile-friendly UI using Bootstrap.
+
+## File Naming Conventions
+
+- React components: PascalCase (e.g., GameStop.js)
+- Page components: PascalCase (e.g., Home/)
+- Utility files: camelCase (e.g., functions.js)
+- CSS modules: camelCase.module.css (e.g., game.module.css)
+
+## Development Workflow
+
+1. Develop backend and frontend separately
+2. Run entire system simultaneously with `npm run dev`
+3. Frontend runs on `http://localhost:3000`
+4. Backend runs on `http://localhost:5000`
+5. Proxy configuration from frontend to backend
+description:
+globs:
+alwaysApply: true
+---
