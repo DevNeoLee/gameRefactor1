@@ -7,16 +7,228 @@ This project is a game application composed of Node.js backend and React fronten
 
 ```
 gameRefactor/
-├── app.js                 # Main Express server application
+├── app.js                 # Main Express server application (59KB, 1685 lines)
 ├── package.json          # Backend dependencies and scripts
+├── package-lock.json     # Backend dependency lock file (84KB, 2387 lines)
 ├── .gitignore           # Git ignore files
 ├── rest.http            # API testing HTTP request file
+├── .DS_Store            # macOS system file
 ├── .cursor/             # Cursor IDE settings and rules
+│   └── rules/
+│       ├── cursor-rules.mdc
+│       └── project-structure.mdc
 ├── config/              # Environment-specific configuration files
+│   ├── keys.js          # Default environment variables
+│   ├── keys_dev.js      # Development environment settings
+│   └── keys_prod.js     # Production environment settings
 ├── model/               # MongoDB data models
+│   ├── game.js          # Game data model (1.3KB, 64 lines)
+│   └── session.js       # User session model (859B, 39 lines)
 ├── router/              # Express routers
+│   ├── gameRouter.js    # Game-related API endpoints (3.0KB, 86 lines)
+│   └── sessionRouter.js # Session management API endpoints (4.1KB, 111 lines)
 ├── utils/               # Utility functions
+│   ├── dbConnect.js     # MongoDB connection configuration (390B, 15 lines)
+│   └── logger.js        # Logging utility (195B, 11 lines)
+├── node_modules/        # Backend dependencies
 └── frontend/            # React frontend application
+    ├── package.json     # Frontend dependencies and scripts
+    ├── package-lock.json # Frontend dependency lock file (723KB, 19029 lines)
+    ├── README.md        # Frontend documentation (3.3KB, 71 lines)
+    ├── .DS_Store        # macOS system file
+    ├── node_modules/    # Frontend dependencies
+    ├── public/          # Static assets
+    │   ├── index.html   # Main HTML template (634B, 22 lines)
+    │   ├── manifest.json # Web app manifest (393B, 23 lines)
+    │   ├── robots.txt   # Search engine directives (67B, 4 lines)
+    │   ├── favicon1.png # Primary favicon (14KB, 33 lines)
+    │   ├── favicon3.png # Alternative favicon (13KB, 50 lines)
+    │   ├── icon.png     # App icon (20KB, 36 lines)
+    │   ├── mainGameImage.png # Main game image (122KB, 421 lines)
+    │   ├── mainFlood.png # Flood game image (199KB, 702 lines)
+    │   ├── groundGame.png # Ground game image (551KB, 1652 lines)
+    │   ├── groundGame1.png # Alternative ground game image (40KB, 122 lines)
+    │   ├── farmer.png   # Farmer character (95KB, 384 lines)
+    │   ├── farmerIcon.png # Farmer icon (117KB, 374 lines)
+    │   ├── provider.png # Provider image (10KB, 52 lines)
+    │   ├── providerEvin.png # Provider Evin image (22KB, 90 lines)
+    │   ├── provider-flat.png # Flat provider image (6.1KB, 25 lines)
+    │   ├── userEvin.png # User Evin image (16KB, 61 lines)
+    │   ├── purdueLogo.png # Purdue logo (14KB, 27 lines)
+    │   ├── oldPaper1.jpg # Old paper texture (426KB, 1694 lines)
+    │   ├── oldPaper1.png # Old paper texture PNG (1.8MB)
+    │   ├── gr.png       # Ground reference image (40KB, 165 lines)
+    │   ├── depletionGraph.png # Depletion graph (92KB, 283 lines)
+    │   ├── bubble.png   # Bubble effect (56KB, 122 lines)
+    │   ├── coin.png     # Coin image (12KB, 39 lines)
+    │   ├── drop.png     # Drop effect (6.8KB, 37 lines)
+    │   ├── arrowRight.png # Right arrow (6.9KB, 7 lines)
+    │   ├── typing.mov  # Typing animation video (1023KB, 4133 lines)
+    │   ├── instructionsNearMiss.mp4 # Near miss instructions (18MB)
+    │   └── Near-miss_experiment_video_instructionsV5.mp4 # Experiment video (62MB)
+    ├── build/           # Production build output
+    │   ├── index.html   # Built HTML (632B, 1 lines)
+    │   ├── asset-manifest.json # Build manifest (517B, 15 lines)
+    │   ├── robots.txt   # Built robots file (67B, 4 lines)
+    │   ├── manifest.json # Built manifest (393B, 23 lines)
+    │   ├── static/      # Built static assets
+    │   │   ├── css/     # Built CSS files
+    │   │   │   ├── main.19677f18.css # Main stylesheet (305KB, 8 lines)
+    │   │   │   └── main.19677f18.css.map # CSS source map (502KB, 1 lines)
+    │   │   └── js/      # Built JavaScript files
+    │   │       ├── main.6d1b0264.js # Main bundle (1.1MB)
+    │   │       ├── main.6d1b0264.js.map # JS source map (5.5MB)
+    │   │       ├── main.6d1b0264.js.LICENSE.txt # License info (2.8KB, 114 lines)
+    │   │       ├── 453.d855a71b.chunk.js # Code split chunk (4.4KB, 2 lines)
+    │   │       └── 453.d855a71b.chunk.js.map # Chunk source map (10KB, 1 lines)
+    │   ├── userEvin.png # Built user image (16KB, 61 lines)
+    │   ├── providerEvin.png # Built provider image (22KB, 90 lines)
+    │   ├── purdueLogo.png # Built Purdue logo (14KB, 27 lines)
+    │   ├── provider.png # Built provider image (10KB, 52 lines)
+    │   ├── oldPaper1.png # Built paper texture (1.8MB)
+    │   ├── provider-flat.png # Built flat provider image (6.1KB, 25 lines)
+    │   ├── oldPaper1.jpg # Built paper texture JPG (426KB, 1694 lines)
+    │   ├── mainFlood.png # Built flood image (199KB, 702 lines)
+    │   ├── mainGameImage.png # Built main game image (122KB, 421 lines)
+    │   ├── groundGame1.png # Built ground game image 1 (40KB, 122 lines)
+    │   ├── icon.png     # Built icon (20KB, 36 lines)
+    │   ├── groundGame.png # Built ground game image (551KB, 1652 lines)
+    │   ├── gr.png       # Built ground reference (40KB, 165 lines)
+    │   ├── farmerIcon.png # Built farmer icon (117KB, 374 lines)
+    │   ├── favicon1.png # Built favicon 1 (14KB, 33 lines)
+    │   ├── favicon3.png # Built favicon 3 (13KB, 50 lines)
+    │   ├── farmer.png   # Built farmer image (95KB, 384 lines)
+    │   ├── depletionGraph.png # Built depletion graph (92KB, 283 lines)
+    │   ├── drop.png     # Built drop effect (6.8KB, 37 lines)
+    │   ├── farmer.png   # Built farmer image (95KB, 384 lines)
+    │   ├── bubble.png   # Built bubble effect (56KB, 122 lines)
+    │   ├── coin.png     # Built coin image (12KB, 39 lines)
+    │   ├── arrowRight.png # Built right arrow (6.9KB, 7 lines)
+    │   └── Near-miss_experiment_video_instructionsV5.mp4 # Built experiment video (62MB)
+    └── src/             # Source code
+        ├── index.js      # React application entry point (329B, 15 lines)
+        ├── index.css     # Global styles (366B, 14 lines)
+        ├── App.js        # Main application component (1.6KB, 50 lines)
+        ├── App.scss      # Main stylesheet (5.5KB, 340 lines)
+        ├── AppContext.js # React Context API configuration (1018B, 41 lines)
+        ├── reportWebVitals.js # Performance monitoring (362B, 14 lines)
+        ├── setupTests.js # Test configuration (241B, 6 lines)
+        ├── components/   # React UI components
+        │   ├── Game/     # Game progression components
+        │   │   ├── Round.js # Main game round logic (8.6KB, 171 lines)
+        │   │   ├── GameStop.js # Game stop functionality (6.6KB, 123 lines)
+        │   │   ├── RoleSelection.js # Player role selection (1.5KB, 34 lines)
+        │   │   ├── ParticipantsReady.js # Participant readiness check (702B, 14 lines)
+        │   │   ├── gamestop.module.css # Game stop styles (1.5KB, 95 lines)
+        │   │   └── practice.module.css # Practice mode styles (2.9KB, 173 lines)
+        │   ├── Stats/    # Statistics display components
+        │   │   ├── GamesCompleted.jsx # Completed games statistics (2.7KB, 48 lines)
+        │   │   ├── SessionsAll.jsx # All sessions statistics (1.8KB, 44 lines)
+        │   │   ├── SessionsCompleted.jsx # Completed sessions statistics (1.8KB, 45 lines)
+        │   │   ├── GamesStartedDroppedBeforePractices.jsx # Games dropped before practice (1.6KB, 36 lines)
+        │   │   ├── NeverStartedGames.jsx # Never started games statistics (743B, 23 lines)
+        │   │   └── GamesStartedDroppedAfterPractices.jsx # Games dropped after practice (2.6KB, 47 lines)
+        │   ├── NearMissNotification/ # Near Miss notification components
+        │   │   ├── CaseHLRN.js # High Loss, Risk, Near Miss case (16KB, 356 lines)
+        │   │   ├── CaseHLVN.js # High Loss, Value, Near Miss case (18KB, 380 lines)
+        │   │   ├── CaseLLRN.js # Low Loss, Risk, Near Miss case (16KB, 356 lines)
+        │   │   ├── CaseLLVN.js # Low Loss, Value, Near Miss case (18KB, 375 lines)
+        │   │   ├── index.js # Main notification component (2.6KB, 81 lines)
+        │   │   └── postIt.module.css # Post-it notification styles (3.7KB, 192 lines)
+        │   ├── AdviceSurvey/ # Advice survey components
+        │   │   ├── index.js # Main advice survey component (9.9KB, 231 lines)
+        │   │   ├── DataAdviceSurvey.js # Survey data structure (539B, 15 lines)
+        │   │   └── adviceSurvey.module.css # Survey styles (2.7KB, 162 lines)
+        │   ├── MemorySurvey/ # Memory survey components
+        │   │   ├── index.js # Main memory survey component (10KB, 241 lines)
+        │   │   ├── DataSurveyGen1.js # Generation 1 survey data (2.1KB, 45 lines)
+        │   │   └── DataSurveyGen234.js # Generation 2-4 survey data (2.2KB, 45 lines)
+        │   ├── NearMissPreSurvey/ # Near Miss pre-survey components
+        │   │   ├── index.js # Main pre-survey component (22KB, 393 lines)
+        │   │   └── data.js # Pre-survey data structure (6.2KB, 138 lines)
+        │   ├── NearMissPostSurvey/ # Near Miss post-survey components
+        │   │   ├── index.js # Main post-survey component (17KB, 294 lines)
+        │   │   ├── dataBaseline.js # Baseline survey data (6.6KB, 147 lines)
+        │   │   └── dataTreatment.js # Treatment survey data (7.9KB, 173 lines)
+        │   ├── QuizSolution/ # Quiz solution components
+        │   │   ├── index.js # Quiz solution component (6.7KB, 184 lines)
+        │   │   └── index.module.css # Quiz solution styles (800B, 51 lines)
+        │   ├── ProgressBar/ # Progress indicator components
+        │   │   ├── index.js # Progress bar component (740B, 24 lines)
+        │   │   └── progressBar.module.css # Progress bar styles (952B, 63 lines)
+        │   ├── WaitingRoom/ # Waiting room components
+        │   │   └── index.js # Waiting room component (4.7KB, 101 lines)
+        │   ├── ChattingRoom/ # Chat functionality components
+        │   │   ├── index.js # Chat room component (11KB, 382 lines)
+        │   │   └── chattingroom.module.css # Chat room styles (0.0B, 0 lines)
+        │   ├── HistoricText/ # Historical text display components
+        │   │   └── index.js # Historical text component (3.3KB, 130 lines)
+        │   ├── AdviceText/ # Advice text display components
+        │   │   └── index.js # Advice text component (3.3KB, 130 lines)
+        │   ├── DecisionResult/ # Decision result display components
+        │   │   ├── index.js # Decision result component (51KB, 993 lines)
+        │   │   └── decisionresult.module.css # Decision result styles (10KB, 619 lines)
+        │   ├── DepletionNotification/ # Depletion notification components
+        │   │   └── index.js # Depletion notification component (2.0KB, 45 lines)
+        │   ├── PracticeNotification/ # Practice notification components
+        │   │   └── index.js # Practice notification component (1.5KB, 18 lines)
+        │   ├── TransitionNotification/ # Transition notification components
+        │   │   ├── index.js # Transition notification component (4.2KB, 112 lines)
+        │   │   └── transition.module.css # Transition styles (900B, 57 lines)
+        │   ├── QuizSolution2.js # Alternative quiz solution component (5.1KB, 150 lines)
+        │   ├── Quizzes2.js # Enhanced quiz component (10KB, 266 lines)
+        │   ├── Radio.js # Radio button component (644B, 23 lines)
+        │   ├── Checkbox.js # Checkbox component (559B, 23 lines)
+        │   ├── Input.js # Input field component (694B, 29 lines)
+        │   ├── Select.js # Select dropdown component (565B, 18 lines)
+        │   ├── SelectLarge.js # Large select component (1.6KB, 28 lines)
+        │   ├── SelectSmall.js # Small select component (1.2KB, 24 lines)
+        │   ├── HorizontalRadioBoxes.js # Horizontal radio button group (1.5KB, 38 lines)
+        │   ├── VerticalRadioBoxes.js # Vertical radio button group (1.3KB, 37 lines)
+        │   ├── RatingRadioButtons.js # Rating radio buttons component (176B, 11 lines)
+        │   └── Breadcrumbs.js # Navigation breadcrumbs component (582B, 15 lines)
+        ├── pages/        # React Router page components
+        │   ├── Home/     # Homepage components
+        │   │   ├── index.js # Homepage component (3.8KB, 99 lines)
+        │   │   └── home.module.css # Homepage styles (1.5KB, 93 lines)
+        │   ├── Welcome/  # Welcome page components
+        │   │   ├── index.js # Welcome page component (6.0KB, 149 lines)
+        │   │   └── welcome.module.css # Welcome page styles (1.8KB, 107 lines)
+        │   ├── Instruction/ # Game instruction components
+        │   │   ├── index.js # Instruction component (6.6KB, 159 lines)
+        │   │   └── instruction.module.css # Instruction styles (2.0KB, 127 lines)
+        │   ├── Game/     # Main game page components
+        │   │   ├── index.js # Main game page component (38KB, 993 lines)
+        │   │   └── game.module.css # Game page styles (2.8KB, 174 lines)
+        │   ├── Quizzes/  # Quiz page components
+        │   │   ├── index.js # Quiz page component (8.4KB, 202 lines)
+        │   │   ├── DataQuizzes.js # Quiz data structure (11KB, 103 lines)
+        │   │   └── prequiz.module.css # Quiz page styles (2.7KB, 161 lines)
+        │   ├── Survey/   # Survey page components
+        │   │   ├── index.js # Survey page component (6.8KB, 153 lines)
+        │   │   ├── DataQuestionnaire.js # Survey data structure (7.4KB, 130 lines)
+        │   │   └── questionnaire.module.css # Survey page styles (2.7KB, 161 lines)
+        │   ├── Stat/     # Statistics page components
+        │   │   ├── index.js # Statistics page component (22KB, 591 lines)
+        │   │   └── stat.module.css # Statistics page styles (1.5KB, 100 lines)
+        │   ├── GoodBye/  # Goodbye page components
+        │   │   ├── index.js # Goodbye page component (4.1KB, 89 lines)
+        │   │   └── goodbye.module.css # Goodbye page styles (1.9KB, 119 lines)
+        │   ├── Dropout/  # Dropout page components
+        │   │   ├── index.js # Dropout page component (4.9KB, 101 lines)
+        │   │   └── dropout.module.css # Dropout page styles (1.5KB, 99 lines)
+        │   ├── Stopped/  # Stopped game page components
+        │   │   ├── index.js # Stopped game page component (2.1KB, 51 lines)
+        │   │   └── stopped.module.css # Stopped game page styles (1.6KB, 96 lines)
+        │   ├── RandomlyAssigned/ # Random assignment page components
+        │   │   ├── index.js # Random assignment page component (1.4KB, 43 lines)
+        │   │   └── randomlyAssigned.module.css # Random assignment page styles (1.6KB, 96 lines)
+        │   └── NotFound/ # 404 page components
+        │       └── index.js # 404 page component (109B, 11 lines)
+        └── utils/        # Frontend utility functions
+            ├── routes.js # Routing utilities (171B, 9 lines)
+            ├── functions.js # Common functions (1.8KB, 57 lines)
+            └── socket.js # Socket.IO client configuration (1.9KB, 64 lines)
 ```
 
 ## Backend Structure

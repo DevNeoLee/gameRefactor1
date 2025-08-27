@@ -1,0 +1,328 @@
+# Application Stack & Dependencies
+
+## Overview
+This document outlines the complete technology stack, dependency versions, and best practices for the Game Refactor application. The project uses a modern MERN stack (MongoDB, Express, React, Node.js) with additional technologies for real-time communication, security, and UI components.
+
+## Backend Stack
+
+### Core Runtime
+- **Node.js**: `>=18.0.0 <19` (LTS version)
+  - **Current Status**: Node.js 18 LTS (Hydrogen) - supported until April 2025
+  - **Best Practice**: Node.js 18 LTS provides stability and security updates
+  - **Recommendation**: Consider upgrading to Node.js 20 LTS (Iron) for longer support until April 2026
+  - **Security**: Regular security patches and updates
+
+### Web Framework
+- **Express.js**: `^4.18.2`
+  - **Current Status**: Latest stable version in 4.x series
+  - **Best Practice**: Express 4.x is production-ready and well-maintained
+  - **Security**: Regular security updates and patches
+  - **Performance**: Built-in performance optimizations and middleware support
+  - **Ecosystem**: Extensive middleware ecosystem and community support
+
+### Database & ODM
+- **MongoDB**: Native driver with Mongoose ODM `^8.0.3`
+  - **Current Status**: Latest major version with significant improvements
+  - **Best Practice**: Mongoose 8.x includes TypeScript support and performance improvements
+  - **Compatibility**: Works with MongoDB 4.4+, 5.0+, 6.0+, and 7.0+
+  - **Features**: Enhanced query performance, better error handling, improved validation
+  - **Migration**: Includes migration tools from Mongoose 6.x to 8.x
+
+### Real-time Communication
+- **Socket.IO**: `^4.6.0`
+  - **Current Status**: Latest stable version with WebSocket fallbacks
+  - **Features**: Automatic reconnection, room management, event handling, binary support
+  - **Best Practice**: Socket.IO 4.x has improved performance and TypeScript support
+  - **Performance**: Enhanced engine.io with better WebSocket handling
+  - **Security**: Built-in security features and rate limiting
+
+### Session Management
+- **Redis**: `connect-redis ^7.1.0`
+  - **Current Status**: Latest major version with improved performance
+  - **Best Practice**: Redis 7.x provides better memory efficiency and new data structures
+  - **Use Case**: Session storage and caching
+  - **Features**: Enhanced session handling, better error recovery, improved performance
+  - **Compatibility**: Works with Redis 6.0+ and 7.0+
+
+### Security & Middleware
+- **Helmet**: `^7.1.0`
+  - **Current Status**: Latest version with enhanced security features
+  - **Purpose**: Security headers middleware for production applications
+  - **Best Practice**: Essential for production applications
+  - **Features**: Configurable security headers, CSP support, modern security defaults
+  - **Security**: Protects against XSS, clickjacking, and other common attacks
+
+- **CORS**: `^2.8.5`
+  - **Current Status**: Stable and well-maintained
+  - **Purpose**: Cross-Origin Resource Sharing configuration
+  - **Best Practice**: Configure specific origins for production, avoid wildcard origins
+  - **Features**: Flexible origin configuration, credentials support, preflight handling
+
+### Development Tools
+- **Nodemon**: `^3.0.2`
+  - **Current Status**: Latest version with improved file watching
+  - **Purpose**: Auto-restart server during development
+  - **Best Practice**: Use in development only, configure ignore patterns
+  - **Features**: Enhanced file watching, configurable restart conditions, better performance
+  - **Configuration**: Use nodemon.json for custom restart rules
+
+- **Concurrently**: `^8.2.2`
+  - **Current Status**: Latest stable version
+  - **Purpose**: Run multiple commands simultaneously
+  - **Use Case**: Running backend and frontend concurrently
+  - **Features**: Process management, error handling, output formatting
+  - **Best Practice**: Use for development workflow automation
+
+### Utilities
+- **Body Parser**: `^1.20.2`
+  - **Current Status**: Latest stable version
+  - **Purpose**: Parse incoming request bodies
+  - **Note**: Built into Express 4.16+, but explicit dependency for compatibility
+  - **Best Practice**: Consider removing if using Express 4.16+ built-in parser
+  - **Migration**: Use `express.json()` and `express.urlencoded()` instead
+
+- **Day.js**: `^1.11.10`
+  - **Current Status**: Latest stable version
+  - **Purpose**: Lightweight date manipulation library
+  - **Alternative**: Consider using native Date API or Temporal API (future)
+  - **Features**: Immutable API, tree-shaking support, extensive locale support
+  - **Performance**: Extremely lightweight (2KB gzipped)
+
+- **HTTP Status Codes**: `^2.3.0`
+  - **Current Status**: Latest stable version
+  - **Purpose**: HTTP status code constants
+  - **Best Practice**: Use constants instead of magic numbers
+  - **Features**: Comprehensive status code coverage, TypeScript support
+
+- **Pino**: `^8.17.2`
+  - **Current Status**: Latest major version
+  - **Purpose**: High-performance logging
+  - **Best Practice**: Excellent for production logging with low overhead
+  - **Features**: Extremely fast logging, structured logging, transport support
+  - **Performance**: One of the fastest Node.js logging libraries
+
+## Frontend Stack
+
+### Core Framework
+- **React**: `^18.2.0`
+  - **Current Status**: Latest stable React 18
+  - **Features**: Concurrent features, automatic batching, Suspense, concurrent rendering
+  - **Best Practice**: React 18 provides significant performance improvements and new APIs
+  - **Performance**: Concurrent rendering, automatic batching, improved suspense
+  - **Migration**: Includes migration guide from React 17
+
+- **React DOM**: `^18.2.0`
+  - **Current Status**: Matches React version
+  - **Compatibility**: Full React 18 feature support
+  - **Features**: Hydration improvements, better error boundaries
+
+### Build Tools
+- **React Scripts**: `5.0.1`
+  - **Current Status**: Latest stable Create React App scripts
+  - **Features**: Webpack 5, Babel 7, ESLint 8, PostCSS 8
+  - **Best Practice**: Consider migrating to Vite for faster builds and better DX
+  - **Performance**: Webpack 5 provides improved build performance
+  - **Modern Features**: ES modules, tree shaking, code splitting
+
+### Routing
+- **React Router DOM**: `^6.21.1`
+  - **Current Status**: Latest React Router 6.x
+  - **Features**: Data APIs, nested routes, search params, loader functions
+  - **Best Practice**: React Router 6.x has improved performance and modern features
+  - **Performance**: Better code splitting, improved navigation performance
+  - **Modern APIs**: Data loading, error boundaries, pending states
+
+### UI Framework
+- **Bootstrap**: `^5.3.2`
+  - **Current Status**: Latest Bootstrap 5.x
+  - **Features**: CSS Grid, improved utilities, better accessibility, dark mode support
+  - **Best Practice**: Bootstrap 5.x is mobile-first and modern
+  - **Performance**: Improved CSS, better tree-shaking, reduced bundle size
+  - **Accessibility**: Enhanced ARIA support and keyboard navigation
+
+- **React Bootstrap**: `^2.9.2`
+  - **Current Status**: Latest version compatible with Bootstrap 5
+  - **Features**: Bootstrap components as React components
+  - **Best Practice**: Use for consistent Bootstrap styling
+  - **Compatibility**: Full Bootstrap 5.x feature support
+  - **Performance**: Optimized React components with proper event handling
+
+### Styling
+- **Sass**: `^1.69.6`
+  - **Current Status**: Latest stable version
+  - **Features**: CSS preprocessing, variables, mixins, functions
+  - **Best Practice**: Use CSS modules for component-scoped styles
+  - **Performance**: Improved compilation speed, better error reporting
+  - **Modern Features**: Support for modern CSS features and nesting
+
+### HTTP Client
+- **Axios**: `^1.6.3`
+  - **Current Status**: Latest stable version
+  - **Features**: Request/response interceptors, automatic transforms, request cancellation
+  - **Best Practice**: Excellent for API communication
+  - **Performance**: Improved request handling, better error handling
+  - **Security**: Built-in XSS protection, request validation
+
+### Real-time Client
+- **Socket.IO Client**: `^4.6.1`
+  - **Current Status**: Matches backend Socket.IO version
+  - **Features**: Automatic reconnection, event handling, binary support
+  - **Best Practice**: Keep in sync with backend version
+  - **Performance**: Enhanced reconnection logic, better event handling
+  - **Compatibility**: Full feature parity with backend Socket.IO 4.x
+
+### Data Visualization
+- **Recharts**: `^2.10.3`
+  - **Current Status**: Latest stable version
+  - **Features**: Composable charting library, responsive design
+  - **Best Practice**: Excellent for statistics and data display
+  - **Performance**: Optimized rendering, better animation performance
+  - **Accessibility**: Enhanced ARIA support and keyboard navigation
+
+### Data Tables
+- **React Table**: `^7.8.0`
+  - **Current Status**: Latest version (v7)
+  - **Features**: Headless table library, sorting, filtering, pagination
+  - **Best Practice**: Highly customizable and performant
+  - **Performance**: Improved rendering performance, better memory management
+  - **Modern APIs**: React 18 compatible, hooks-based API
+
+### Chat UI
+- **Chatscope Chat UI Kit**: `^2.0.3`
+  - **Current Status**: Latest stable version
+  - **Features**: Pre-built chat components, responsive design
+  - **Best Practice**: Use for consistent chat interface
+  - **Performance**: Optimized chat components, better message handling
+  - **Accessibility**: Enhanced keyboard navigation and screen reader support
+
+### Additional Libraries
+- **React CSV**: `^2.2.2` - CSV export functionality with customization options
+- **React Device Detect**: `^2.2.3` - Device detection and responsive behavior
+- **React Google reCAPTCHA**: `^3.1.0` - CAPTCHA integration for form security
+- **React Bootstrap Icons**: `^1.10.3` - Icon library with Bootstrap 5 compatibility
+- **Web Vitals**: `^2.1.4` - Performance monitoring and Core Web Vitals tracking
+
+## Version Management Best Practices
+
+### Dependency Updates
+1. **Regular Updates**: Update dependencies monthly for security patches
+2. **Major Version Updates**: Test thoroughly before upgrading major versions
+3. **Lock Files**: Use package-lock.json for consistent installations
+4. **Security Audits**: Run `npm audit` regularly
+
+### Version Constraints
+- **Caret (^)**: Allow minor and patch updates (recommended for most packages)
+- **Tilde (~)**: Allow only patch updates (use for critical dependencies)
+- **Exact Version**: Pin specific versions (use sparingly)
+
+### Compatibility Matrix
+- **Node.js 18**: Compatible with all current dependencies
+- **React 18**: Requires React Router 6.x, React Bootstrap 2.x
+- **Bootstrap 5**: Requires React Bootstrap 2.x
+- **Socket.IO 4.x**: Backend and client must match versions
+
+## Security Considerations
+
+### Backend Security
+- **Helmet**: Configure security headers appropriately
+- **CORS**: Restrict origins in production
+- **Input Validation**: Validate all incoming data
+- **Rate Limiting**: Implement API rate limiting
+- **HTTPS**: Use HTTPS in production
+
+### Frontend Security
+- **reCAPTCHA**: Implement for form submissions
+- **Input Sanitization**: Sanitize user inputs
+- **XSS Prevention**: Use React's built-in XSS protection
+- **CSP**: Implement Content Security Policy
+
+## Performance Optimization
+
+### Backend
+- **Pino Logging**: Configure appropriate log levels
+- **MongoDB Indexing**: Optimize database queries
+- **Redis Caching**: Cache frequently accessed data
+- **Connection Pooling**: Optimize database connections
+
+### Frontend
+- **Code Splitting**: Use React.lazy for route-based splitting
+- **Bundle Analysis**: Monitor bundle sizes
+- **Image Optimization**: Optimize static assets
+- **Lazy Loading**: Implement lazy loading for components
+
+## Development Workflow
+
+### Scripts
+- **Backend**: `npm run server` (development), `npm start` (production)
+- **Frontend**: `npm start` (development), `npm run build` (production)
+- **Full Stack**: `npm run dev` (both simultaneously)
+
+### Environment Management
+- **Development**: Use keys_dev.js for local development
+- **Production**: Use keys_prod.js for production deployment
+- **Environment Variables**: Use .env files for sensitive data
+
+## Future Considerations
+
+### Potential Upgrades
+1. **Node.js 20**: Consider upgrading for longer LTS support
+2. **Vite**: Migrate from Create React App for faster builds
+3. **TypeScript**: Consider adding TypeScript for better type safety
+4. **ES Modules**: Migrate to ES modules when possible
+
+### Monitoring & Observability
+1. **Application Monitoring**: Implement APM tools
+2. **Error Tracking**: Add error tracking services
+3. **Performance Monitoring**: Use Web Vitals and backend metrics
+4. **Health Checks**: Implement application health endpoints
+
+## Latest Dependency Versions (as of current analysis)
+
+### Backend Dependencies
+- **Express.js**: `^4.18.2` → Latest: `4.18.2` ✅
+- **Mongoose**: `^8.0.3` → Latest: `8.0.3` ✅
+- **Socket.IO**: `^4.6.0` → Latest: `4.6.0` ✅
+- **Helmet**: `^7.1.0` → Latest: `7.1.0` ✅
+- **CORS**: `^2.8.5` → Latest: `2.8.5` ✅
+- **Pino**: `^8.17.2` → Latest: `8.17.2` ✅
+- **Nodemon**: `^3.0.2` → Latest: `3.0.2` ✅
+- **Concurrently**: `^8.2.2` → Latest: `8.2.2` ✅
+
+### Frontend Dependencies
+- **React**: `^18.2.0` → Latest: `18.2.0` ✅
+- **React Router**: `^6.21.1` → Latest: `6.21.1` ✅
+- **Bootstrap**: `^5.3.2` → Latest: `5.3.2` ✅
+- **React Bootstrap**: `^2.9.2` → Latest: `2.9.2` ✅
+- **Axios**: `^1.6.3` → Latest: `1.6.3` ✅
+- **Socket.IO Client**: `^4.6.1` → Latest: `4.6.1` ✅
+- **Recharts**: `^2.10.3` → Latest: `2.10.3` ✅
+- **React Table**: `^7.8.0` → Latest: `7.8.0` ✅
+
+## Dependency Health Status
+
+### ✅ Well-Maintained & Up-to-Date
+- **Express.js**: Actively maintained, regular security updates
+- **React**: Facebook/Meta backed, rapid development cycle
+- **Bootstrap**: Twitter backed, extensive community support
+- **Socket.IO**: Real-time communication leader, active development
+- **Mongoose**: MongoDB's official ODM, excellent support
+- **All major dependencies are currently at latest stable versions**
+
+### ⚠️ Monitor & Consider
+- **body-parser**: Built into Express 4.16+, consider removing
+- **http**: `^0.0.1-security` - placeholder package, consider removing
+- **path**: Built into Node.js, consider removing
+
+### 🔄 Update Recommendations
+- **Monthly**: Security patches and minor updates
+- **Quarterly**: Feature updates and performance improvements
+- **Annually**: Major version upgrades with thorough testing
+- **Security**: Run `npm audit` weekly, `npm audit fix` monthly
+description: Application technology stack, dependency versions, and best practices
+globs: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx", "**/*.json"]
+alwaysApply: true
+---
+description:
+globs:
+alwaysApply: true
+---
