@@ -1,0 +1,96 @@
+.container {
+    width: 1400px;
+    height: 90vh;
+}
+
+.breadcrumbContainer {
+    /* background-color: #e0e0e0; */
+    padding: 5px;
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 50px;
+    height: 50px;
+}
+
+.content {
+    border: 2px solid black;
+    /* padding: 40px; */
+    height: 80vh;
+      overflow-y: scroll;
+    scroll-behavior: smooth;
+    /* width: 100%; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.box {
+    /* background-color: lightcoral; */
+    padding: 50px;
+    width: 720px;
+    box-shadow: rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px;
+}
+
+.container h1 {
+    font-size: 22px;
+    line-height: 32px;
+    font-weight: 900;
+    margin-bottom: 50px;
+    text-transform: uppercase;
+}
+
+.buttonContainer {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.button {
+    background-color: #0000c4;
+    color: white;
+    height: 50px;
+    width: 200px;
+    border: none;
+    border-radius: 30px;
+    transition: 125ms ease-in-out;
+    cursor: position;
+    margin-top: 30px;
+  }
+
+  .button:hover {
+    background-color: white;
+    color: #0000c4;
+    transition: 125ms ease-in-out;
+    border: 1px solid #0000c4;
+}
+
+.bottomMessageBox {
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    line-height: 50px;
+}
+
+.sectionLeft {
+    width: 33%;
+}
+
+.sectionMiddle {
+    width: 33%;
+    text-align: center;
+}
+
+.sectionRight {
+    width: 33%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sectionLeft span,
+.sectionMiddle span,
+.sectionRight span   {
+    font-weight: 600;
+    font-size: 20px;
+}

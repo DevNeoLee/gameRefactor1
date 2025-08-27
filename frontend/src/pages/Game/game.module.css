@@ -1,0 +1,173 @@
+.container {
+    max-width: 1200px;
+    /* height: 90vh; */
+    margin: 0 auto;
+}
+
+.breadcrumbContainer {
+    /* background-color: #e0e0e0; */
+    padding: 0.3rem;
+    margin-top: 0.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+}
+
+.content {
+    border: 2px solid black;
+    padding: 1rem 2rem;
+    /* height: 85vh; */
+    /* display: flex; */
+      /* overflow-y: scroll;
+    scroll-behavior: smooth; */
+}
+
+.box {
+    /* background-color: aliceblue; */
+    width: 100%;
+}
+
+.container h1 {
+    font-size: 22px;
+    font-weight: 900;
+}
+
+.container p {
+    margin: 2px;
+}
+
+.title {
+    /* background-color: lightgreen; */
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.waitingMessage {
+    border: 1px solid rgb(224, 224, 224);
+    padding: 20px;
+    letter-spacing: 2px;
+    margin: 20px 0;
+    font-size: 18px;
+}
+
+.grayMessage {
+    border: 1px solid rgb(224, 224, 224);
+    padding: 20px;
+    letter-spacing: 2px;
+    margin: 20px 0;
+    background-color: rgb(224, 224, 224);
+    font-size: 18px;
+}
+
+
+.rightImage {
+    /* background-color: lightgreen; */
+    width: 470px;
+    margin-top: 30px;
+    margin-left: 100px;
+}
+
+.bottomMessageBox {
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+    line-height: 50px;
+}
+
+.sectionLeft {
+    width: 33%;
+}
+
+.sectionMiddle {
+    width: 33%;
+    text-align: center;
+}
+
+.sectionRight {
+    width: 33%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sectionLeft span,
+.sectionMiddle span,
+.sectionRight span   {
+    font-weight: 600;
+    font-size: 20px;
+}
+
+
+.temporayButtonsContent {
+    /* background-color: bisque; */
+    width: 100%;
+    display:flex;
+    justify-content: space-between;
+}
+
+.temporaryButtons {
+    /* background-color: aliceblue; */
+    display: flex;
+    justify-content: flex-end;
+}
+
+
+.buttonContainer {
+    display: flex;
+    padding: 20px;
+
+    /* background-color: rgb(238, 238, 238); */
+    justify-content: space-between;
+}
+
+.outterButton {
+    background-color: white;
+    color: #0000c4;
+    height: 50px;
+    width: 200px;
+    border: 2px solid #0000c4;
+    border-radius: 30px;
+    margin-right: 15px;
+    font-size: 22px;
+    transition: 125ms ease-in-out;
+}
+
+.outterButton:hover {
+    background-color: #0000c4;
+    color: white;
+    height: 50px;
+    width: 200px;
+    border: 2px solid #0000c4;
+    border-radius: 30px;
+    margin-right: 15px;
+    font-size: 22px;
+    transition: 125ms ease-in-out;
+}
+
+.timerBox {
+    display: flex;
+}
+
+.timer {
+    color: lightcoral;
+    font-size: 22px;
+    letter-spacing: 2px;
+    margin: 5px;
+    padding: 5px;
+    width: 200px;
+
+}
+
+.timerTick {
+    /* background-color: #0000c4; */
+    color: gray;
+    font-size: 22px;
+    font-weight: 800;
+    margin: 5px;
+    padding: 5px;
+    width: 100px;
+    letter-spacing: 2px;
+}
+

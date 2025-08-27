@@ -1,0 +1,106 @@
+.container {
+    width: 100%;
+    height: 100vh;
+}
+
+.breadcrumbContainer {
+    /* background-color: #e0e0e0; */
+    padding: 2px;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 20px;
+}
+
+.content {
+    border: 2px solid black;
+    padding: 1rem 2rem;
+    height: 90vh;
+    max-width: 1150px;
+
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    margin: 1rem auto;
+    /* background-color: lightgreen; */
+}
+
+.box {
+    /* background-color: aliceblue; */
+}
+
+.container h1 {
+    line-height: 32px;
+    font-weight: 900;
+}
+
+.container p {
+    margin: 2px;
+    font-size: 20px;
+}
+
+.title {
+    /* background-color: lightgreen; */
+    margin: 10px 20px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    /* border: 1px solid gray;
+    padding-bottom: 20px;
+    margin-bottom: 20px; */
+    margin-right: 25px;
+}
+
+.paragraph li {
+    font-size: 20px;
+    letter-spacing: 1px;
+    line-height: 30px;
+    margin-bottom: 8px;
+}
+.butttonContainer {
+    display:flex;
+    justify-content: flex-end;
+    width: 90%;
+    /* background-color: aliceblue; */
+    margin: 1rem 3rem 0;
+}
+
+.button {
+    background-color: #0000c4;
+    color: white;
+    height: 50px;
+    width: 200px;
+    border: none;
+    margin: 10px 0 0;
+    border-radius: 30px;
+    transition: 125ms ease-in-out;
+    cursor: position;
+  }
+
+.button:hover {
+    background-color: white;
+    color: #0000c4;
+    transition: 125ms ease-in-out;
+    border: 1px solid #0000c4;
+}
+.button:disabled {
+ background-color: #afeaf2;
+ transition: 125ms ease-in-out;
+}
+
+.button:disabled:hover {
+    color: white;
+    border: 1px solid #afeaf2;
+    background-color: #afeaf2;
+    transition: 125ms ease-in-out;
+}
+
+.bold {
+    font-weight: bold;
+    font-size: 20px;
+}
+

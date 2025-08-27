@@ -1,0 +1,98 @@
+.container {
+    max-width: 1100px;
+    margin: 0px auto;
+    margin-bottom: 30px;
+}
+
+.breadcrumbContainer {
+    /* background-color: #e0e0e0; */
+    padding: 2px;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    height: 20px;
+}
+
+.content {
+    border: 2px solid black;
+      overflow-y: scroll;
+    scroll-behavior: smooth;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 30px 30px;
+
+}
+
+.container h1 {
+    font-size: 22px;
+    line-height: 22px;
+    font-weight: 900;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.paragraph {
+    margin: 25px 60px;
+}
+
+.paragraph span {
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.grayMessage {
+    padding: 10px 40px;
+    letter-spacing: 2px;
+    margin: 0px 60px 0;
+    background-color: rgb(224, 224, 224);
+    font-size: 18px;
+}
+
+.grayMessage h2 {
+    /* background-color: orange; */
+    margin: auto 0;
+}
+.yellowMessage {
+    padding: 5px;
+    margin: 5px;
+    background-color: lightyellow;
+    font-size: 18px;
+    text-align: center;
+}
+
+.grayMessage p {
+    /* background-color: lightgreen; */
+    margin: 0 auto;
+    text-align: center;
+}
+
+.spanEmphasize {
+     color: #0000c4; 
+     font-size: 1.5rem;
+     margin: 0.5rem 0.4rem 0 1rem;
+     line-height: 1.5;
+}
+
+.unit {
+    color: #0000c4; 
+    font-size: 20px;
+    line-height: 0;
+}
+
+.name {
+    padding: 0 60px;
+}
+
+.name p {
+    line-height: 16px;
+    color: red;
+}
+
+.mturkcodeSpan {
+    font-size: 22px;
+}
+

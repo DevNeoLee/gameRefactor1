@@ -1,0 +1,161 @@
+
+.container {
+    width: 100%;
+    height: 100vh;
+}
+
+.breadcrumbContainer {
+    /* background-color: #e0e0e0; */
+    padding: 2px;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 20px;
+}
+
+.content {
+    border: 2px solid black;
+    padding: 1rem 2rem;
+    height: 95vh;
+    max-width: 1150px;
+
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    margin: 1rem auto;
+    /* background-color: lightgreen; */
+}
+
+.box {
+    /* background-color: lightgreen; */
+    width: 100%;
+    margin: 0 auto;
+}
+
+.container h1 {
+    font-size: 22px;
+    margin-top: 15px;
+    line-height: 1px;
+    font-weight: 900;
+}
+
+.container p {
+    margin: 2px;
+    font-size: 1rem;
+}
+
+.title {
+    /* background-color: lightgreen; */
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    justify-content: space-between;
+}
+
+.logo {
+    margin-right: 25px;
+}
+.paragraph {
+    margin-bottom: 40px;
+}
+
+.paragraph li {
+    font-size: 18px;
+    letter-spacing: 1px;
+    line-height: 30px;
+}
+
+.title {
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.title span {
+    color: #0000c4;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.title {
+    /* background-color: lightgreen; */
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    justify-content: space-between;
+}
+
+
+.buttonContainer {
+    display: flex;
+    padding: 60px 20px 50px 20px;
+    /* background-color: lightblue; */
+    justify-content: space-between;
+    /* background-color: lightgoldenrodyellow; */
+    width: 100%;
+    margin: 0 auto;
+}
+
+.button {
+    background-color: #0000c4;
+    color: white;
+    height: 50px;
+    width: 200px;
+    border: none;
+    border-radius: 30px;
+    transition: 125ms ease-in-out;
+    cursor: position;
+}
+
+.button:hover {
+    background-color: white;
+    color: #0000c4;
+    transition: 125ms ease-in-out;
+    border: 1px solid #0000c4;
+}
+
+
+.outterButton {
+    background-color: white;
+    color: #0000c4;
+    height: 50px;
+    width: 200px;
+    border: 1px solid #0000c4;
+    border-radius: 30px;
+    margin-right: 15px;
+    transition: 125ms ease-in-out;
+}
+
+.outterButton:hover {
+    background-color: #0000c4;
+    color: white;
+    height: 50px;
+    width: 200px;
+    border: 1px solid #0000c4;
+    border-radius: 30px;
+    margin-right: 15px;
+    transition: 125ms ease-in-out;
+}
+
+.buttonStart {
+    background-color: green;
+    color: white;
+    height: 50px;
+    width: 200px;
+    border: none;
+    border-radius: 30px;
+    margin-right: 15px;
+    transition: 125ms ease-in-out;
+    cursor: position;
+}
+
+.buttonStart:hover {
+    background-color: white;
+    color: green;
+    border: 1px solid green;
+    transition: 125ms ease-in-out;
+}
+
+.radio {
+    /* width: 1000px; */
+    text-align: left;
+    /* background-color: yellow; */
+}
+

@@ -1,0 +1,57 @@
+.container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+}
+
+.card {
+    width: 55rem;
+    background: white;
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cardBody {
+    padding: 2rem;
+}
+
+.content {
+    text-align: center;
+}
+
+.title {
+    color: #0000c4;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+}
+
+.message {
+    color: #333;
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    letter-spacing: 1px;
+}
+
+.timerContainer {
+    padding: 1rem;
+    background-color: #fdfdfe;
+    border-top: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.timer {
+    color: #0000c4;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+} 

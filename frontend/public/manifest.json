@@ -1,0 +1,22 @@
+{
+  "short_name": "Irrigation Game",
+  "name": "Irrigation Game",
+  "icons": [
+    {
+      "src": "igLogo.png",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "igLogo.png",
+      "type": "image/png"
+    },
+    {
+      "src": "igLogo.png",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

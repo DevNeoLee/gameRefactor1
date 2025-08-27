@@ -1,0 +1,340 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Architects+Daughter&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hind+Madurai:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@500&display=swap');
+
+$primary: #0000c4;
+$secondary: #3e3eff;
+$dark: gray;
+$bs-link-color: #a6182d;
+$breadcrumb-item-active-color: #0000ff;
+$right: #b7e597;
+$wrong: #ffe7aa;
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  /* background-color: lightcoral; */
+  font-family: 'Hind Madurai', sans-serif;
+    /* color: #333; */
+    font-size: 16px;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  // scroll-behavior: smooth;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Work Sans', sans-serif;
+  color: rgb(56, 56, 56);
+}
+
+h1 {
+  font-size: 22px;
+}
+
+p {
+  font-size: 20px;
+}
+
+button {
+  font-size: 18px;
+}
+
+td {
+  padding: 0px;
+}
+
+:root {
+  --lightblue: #64BEFF;
+  --blue: #1e90ff;
+  --white: #ffffff;
+  --green: #2ebe7e;
+  --dark: #13404f;
+  --pcbblue: #002c71;
+  --formBackground: rgb(236, 236, 236);
+  --normancolor: #6386B2;
+  --petecolor: #0000c4;
+  --ericacolor: #E97334;
+}
+
+h2 {
+  color: var(--dark)
+}
+
+.form-check-input[type=radio] {
+  border: 1px solid #0000c4;
+}
+
+.App {
+  text-align: center;
+}
+
+
+
+.form label {
+  /* color: darkgray; */
+  /* font-size: 0.8rem; */
+  display: none;
+}
+
+
+
+.form input[type="email"],
+.form input[type="password"] {
+  margin-bottom: 1rem;
+  /* background-color: lightcoral; */
+  border-radius: 0.2rem;
+  height: 3rem;
+  border: 1px solid #777;
+  color: #333;
+}
+
+.form input::placeholder {
+  color: #777;
+  font-size: 0.8rem;
+}
+
+.form button,
+.formGeneral button,
+.gameframe button {
+  border: none;
+  margin-bottom: 1rem;
+  transition: 250ms ease-in-out;
+}
+
+.form h3 {
+  margin: 2rem 0;
+  font-weight: 300;
+  color: #333;
+}
+
+.or {
+  text-align: center;
+  /* background-color: yellow; */
+  height: 2rem;
+  margin-bottom: 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.formGeneral {
+  margin: 1rem;
+  width: 750px;
+  padding: 2rem;
+  margin: 1rem auto;
+  /* display: flex; */
+  /* align-items: center;
+    text-align: center; */
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 10px 20px;
+  /* box-shadow: rgba(17, 17, 26, 0.1) 0px 8px 24px,
+      rgba(17, 17, 26, 0.1) 0px 16px 56px, rgba(17, 17, 26, 0.1) 0px 24px 80px; */
+  transition: 250ms ease-in-out;
+  background-color: rgb(241, 240, 240);
+
+}
+
+.formGeneral p {
+    font-size: 1.5rem;
+}
+
+.formFrame {
+  background-color: #e8effb;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 10px 20px;
+  border-radius: 20px;
+  padding: 2rem;
+}
+
+.formFrame h2 {
+  padding: 1rem 0 2rem 0;
+}
+
+.personContainer {
+  width: 150px;
+  //  background-color: light#0000c4;
+  margin: 0rem auto;
+  position: relative;
+}
+
+
+.select {
+  margin: 0rem 0rem 2rem 0rem;
+  padding: 0rem;
+  height: 3rem;
+  /* box-shadow: rgba(0, 0, 0, 0.2) 0px 10px 20px; */
+}
+
+.inputFrame {
+  margin: 1rem 1rem 2rem 1rem;
+  padding: 1rem 1rem 1rem 1rem;
+  /* background-color: #2ebe7e; */
+  border-radius: 10px;
+  border: 1px solid rgb(168, 168, 168, 0.3);
+  transition: 500ms ease-in-out;
+  /* box-shadow: rgba(0, 0, 0, 0.2) 0px 10px 20px; */
+}
+
+.inputFrame label {
+  font-size: 1.4rem;
+}
+
+.preParagraph {
+  padding: 2rem 2rem 2rem 2rem;
+  margin: 2rem 2rem;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 10px 20px;
+  border-radius: 1rem;
+  font-size: 1.2rem;
+  background-color: #e8effb;
+  line-height: 2.4;
+}
+
+.people {
+  display: flex;
+  /* width: 200px; */
+}
+
+.personIntro {
+  /* background-color: lightblue; */
+  margin: 0 auto;
+  padding: 1rem 0.4rem 0.5rem 0.5rem;
+  /* margin: 0.4rem 0.4rem 1rem 0.4rem; */
+  /* height: 250px;
+  line-height: 250px; */
+  /* or whatever you want, should match height */
+  /* text-align: center; */
+  margin-bottom: 1rem;
+  display: table-cell;
+  vertical-align: middle;
+
+}
+
+.personIntro img {
+  vertical-align: middle;
+  margin-bottom: 0.2rem;
+}
+
+
+.buttons {
+  display: flex;
+  max-width: 610px;
+  margin: 0 auto;
+}
+
+.buttons button{
+  font-size: 1.3rem;
+}
+
+.buttonsPreGame {
+  display: flex;
+
+}
+
+.buttonsPreGame button {
+  margin: 0 1rem 0 1rem;
+}
+
+/*** GrandGame, Instruction ********/
+.gameRoomsFrame {
+  display: flex;
+  margin: 0.3rem;
+  background-color: rgb(253, 253, 253);
+  display: flex;
+  justify-content: space-around;
+  min-height: 20rem;
+}
+
+.instruactionWaitContainer {
+  display: flex;
+}
+
+.gameRoomIcon {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 5px;
+  /* border: 1px solid gray; */
+  margin: 2rem;
+  padding: 1rem;
+    background-color: lightblue;
+      display: grid;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.5s all;
+}
+
+.gameRoomNotice {
+  width: 15rem;
+  height: 8rem;
+  border-radius: 5px;
+  border: 1px solid gray;
+  margin: 0.4rem;
+  background-color: lightblue;
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.5s all;
+}
+
+.pregameBegin button {
+  font-size: 1.3rem;
+}
+
+a {
+  text-decoration: none;
+}
+
+.breadcrumb {
+  color: yellow;
+}
+
+body > div > a {
+  text-decoration: none;
+}
+
+.form-check-input[type=radio] {
+  // padding: 20px;
+  margin-top: 7px;
+  // margin-right: 10px;
+}
+
+.dropdown-menu {
+  height: 370px;
+  overflow-y: scroll;
+}
+
+.dropdown-toggle {
+  width: 260px;
+  margin-left: 50px;
+}
+
+.test {
+  color: #3d3d3d;
+}
+
+.nav-tabs {
+  margin-left: 60%;
+}
+
+.nav-tabs .nav-link {
+  width: 190px;
+  padding: 2px 10px;
+  background-color: rgb(234, 234, 234);
+}
+
+.nav-tabs .nav-link.active {
+  color: white;
+  background-color: #0000c4;
+}

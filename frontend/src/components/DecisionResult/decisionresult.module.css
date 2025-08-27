@@ -1,0 +1,618 @@
+.main {
+  /* background-color: lightgreen; */
+  width: 100%;
+}
+
+.main h4 {
+    font-size: 20px;
+}
+
+.main p {
+    font-size: 18px;
+}
+
+
+.leftInside {
+    /* background-color: lightcyan; */
+    width: 540px;
+    height: 300px;
+    position: relative;
+}
+
+.graphTitle {
+    text-align: center;
+    /* background-color: lightblue; */
+    position: absolute;
+    left: 40px;
+    top: 20px;
+    width:490px;
+}
+
+.graphTitle h2{
+    font-size: 24px;
+    color: #0000c4;
+    font-weight: bold;
+    letter-spacing: 1px;
+    line-height: 0.5;
+}
+
+.graphTitle p {
+    font-size: 20px;
+    color: #0000c4;
+}
+
+.title {
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    justify-content: space-between;
+    font-weight: 800;
+    align-items: center;
+    display: flex;
+}
+
+.title h1 {
+    font-size: 34px;
+    line-height: 34px;
+    font-weight: 800;
+}
+
+.title span {
+    margin-bottom: 50px;
+    font-size: 18px;
+    color: gray;
+    font-weight: 600;
+}
+
+.title p {
+    margin-left: "10px"    
+}
+
+.buttonContainer {
+    display: flex;
+    padding: 20px;
+
+    /* background-color: rgb(238, 238, 238); */
+    justify-content: space-between;
+}
+
+.outterButton {
+    background-color: white;
+    color: #0000c4;
+    height: 50px;
+    width: 200px;
+    border: 2px solid #0000c4;
+    border-radius: 30px;
+    margin-right: 15px;
+    font-size: 22px;
+    transition: 125ms ease-in-out;
+}
+
+.outterButton:hover {
+    background-color: #0000c4;
+    color: white;
+    height: 50px;
+    width: 200px;
+    border: 2px solid #0000c4;
+    border-radius: 30px;
+    margin-right: 15px;
+    font-size: 22px;
+    transition: 125ms ease-in-out;
+}
+
+.rightImageContainer {
+    /* background-color: lightgreen; */
+    width: 670px;
+    height: 382px;
+    margin-left: 50px;
+    position: relative;
+}
+
+.sectionLeft {
+    width: 33%;
+}
+
+.sectionMiddle {
+    width: 33%;
+    text-align: center;
+}
+
+.sectionRight {
+    width: 33%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sectionLeft span,
+.sectionMiddle span,
+.sectionRight span   {
+    font-weight: 600;
+    font-size: 20px;
+}
+
+.midSection {
+    display: flex;
+    justify-content: space-between;
+    /* height: 100%; */
+}
+
+.investOn {
+    margin-left: 20px;
+    font-size: 20px;
+    color: #0000c4;
+}
+
+.mid {
+    background-color: lightcoral;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    min-height: 110px;
+}
+
+.midForm {
+    background-color: lightgray;
+    padding: 0 10px;
+    /* height: 200px; */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.labelContainer {
+    /* background-color: lightcoral; */
+    height: 145px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: left;
+    padding-top: 26px;
+    margin-left: 10px;
+    width: 180px;
+    /* position: absolute; */
+}
+
+.labelContainer p {
+    font-size: 18px;
+    margin: 0;
+}
+
+.label0 {
+    width: 193px;
+    height: 115px; 
+    cursor: pointer; 
+    margin-right: 12px;
+    border-radius: 5px;
+    padding: 10px 5px 20px 20px;
+    /* background-color: aquamarine; */
+}
+
+.label0:hover {
+    /* background-color: aquamarine; */
+}
+
+.label0 p {
+    font-size: 17px;
+    margin-left: 4px;
+    margin-top: 2px;
+}
+
+.label1container {
+    /* background-color: lightcoral; */
+    width: 280px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.label1container p{
+    /* font-size: 18px; */
+    padding: 10px;
+}
+
+.label1 {
+    height: 62px;
+    /* background-color: aquamarine; */
+    padding: 5px 15px 15px 15px;
+}
+
+.label2 {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+    flex-direction: column; 
+    width: 37px;
+    height: 100px; 
+    cursor: pointer; 
+    align-items: center;
+    /* margin-right: 12px; */
+    border-radius: 5px;
+    padding: 5px;
+    /* background-color: aquamarine; */
+}
+
+.form {
+    /* background-color: lightgreen; */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.midPart input[type='radio'] {   
+    vertical-align: baseline;
+    padding: 2px;
+    margin: 3px;
+ }
+
+ .radio {
+    /* background-color: lightpink; */
+    width: 55px;
+    margin: 2px;
+ }
+
+ .radio label {
+    /* background-color: lightgreen; */
+    width: 30px;
+    display: flex;
+    /* justify-content: center; */
+    align-items: center;
+    padding: 3px;
+ }
+
+ .radioBox {
+    /* width: 450px; */
+    /* background-color: lightcoral; */
+    overflow-wrap: break-word;
+    /* display: inline; */
+    height: 170px;
+    display: flex;
+    flex-wrap: wrap;
+ }
+
+ .radioBoxInner {
+    display: flex;
+    flex-wrap: wrap;
+    width: 900px;
+    padding: 3px 0px;
+    /* background-color: lightgreen; */
+ }
+
+ .radioBoxInner input[type='radio'], label{   
+    vertical-align: baseline;
+    padding: 1px;
+    margin: 2px;
+ }
+
+
+ .mainResult {
+    display: flex;
+    /* background-color: lightcoral; */
+    position: relative;
+    justify-content: space-between;
+    padding: 0;
+    /* padding: 10px; */
+}
+
+
+
+ .topbox thead {
+    background-color: gray;
+    color: white;
+    text-align: center;
+    letter-spacing: 1px;
+ }
+
+ .userContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    width: 100%;
+    margin-top: 0.8rem;
+    width: 6rem;
+ }
+
+ .noticibleContainer {
+    /* display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    color: gray; */
+    /* padding: 0px;
+    font-size: 26px; */
+ }
+
+ .resultNoticible {
+    color: black;
+    margin: auto 0.2rem;
+    font-size: 1.7rem;
+    display: flex;
+    /* justify-content: ; */
+ }
+
+
+.bottomBox thead{
+    background-color: gray;
+    color: white;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.bottomMessageBox {
+    height: 2rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+
+ .resultValue {
+    width: 3rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-align: center;
+ }
+
+ .smallText {
+    margin-top: 0.2rem;
+    font-size: 0.8rem;
+    width: 1.8rem;
+    margin-left: 0.1rem;
+ }
+
+ .smallTextProvider1 {
+    margin-top: 0.2rem;
+    font-size: 0.8rem;
+    width: 1.8rem;
+    margin: 0.4rem
+ }
+
+ .earningsContainer {
+    text-align: center;
+    margin: 0.9rem 0 0px 1rem;
+ }
+
+ .noticibleContainerProvider {
+    margin: 10px 0 0 7px;
+ }
+
+ .providerContainer {
+    margin: 12px 0 0 3px;
+    text-align: center;
+    width: 101px;
+    height: 30px;
+    font-size: 18px;
+    /* background-color: lightgreen; */
+ }
+
+ .rightResultContainer {
+    font-size: 18px;
+    margin-right: 10px;
+    margin-top: 15px;
+ }
+
+.villagerContainer {
+    width: 100px;
+    font-size: 18px;
+    position: relative;
+}
+
+.villagerContainer2 {
+    /* width: 300px; */
+    font-size: 18px;
+    position: relative;
+}
+
+.villagerContainerRole {
+    color: #0000c4;
+    font-weight: bold;
+    margin: auto 5px;
+    position: absolute;
+    right: -12px;
+    top: 2px;
+    font-size: 15px;
+}
+
+.villagerContainerRole2 {
+    color: #0000c4;
+    font-weight: bold;
+    /* margin: auto 5px; */
+    margin-top: 0px;
+    position: absolute;
+    right: 27px;
+    bottom: -10px;
+    font-size: 17px;
+}
+
+.blinker {
+    animation: blinker 2.5s linear infinite;
+}
+
+
+@keyframes blinker {
+50% {
+    opacity: 0;
+}
+}
+
+
+.hoverSuggestion {
+    position: absolute;
+    left: 0px;
+    bottom: -160px;
+    width: 460px;
+    color: rgb(128, 128, 128);
+    line-height: 20px;
+    z-index: 1;
+}
+
+.hoverSuggestion p {
+    font-size: 17px;
+}
+
+.timeSuggestion {
+    position: absolute;
+    left: 0px;
+    bottom: -90px;
+    width: 400px;
+    color: rgb(128, 128, 128);
+    line-height: 30px;
+}
+
+.timeSuggestion p {
+    font-size: 19px;
+}
+
+.bottomGraph {
+    display: flex;
+    justify-content: space-between;
+    /* background-color: yellow; */
+    margin-top: 5px;
+    padding-top: 10px;
+    margin-left: 60px;
+    box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+    border-radius: 10px;
+    width: 450px;
+}
+
+.bottomGraphLeft {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.bottomGraphRight {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 0px;
+}
+
+.bottomGraphRight p {
+    margin: 0px;
+}
+
+.dottedLine {
+    border-left: 7px dashed #fe02f2;
+    height: 70%;
+    margin-left: 10px;
+    margin-top: 130px;
+    position: absolute;
+    left: 380px;
+    top: 0px;
+}
+
+.zoneFarLabel {
+    position: absolute;
+    left: 147px;
+    bottom: 17px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.zoneNearLabel {
+    position: absolute;
+    left: 640px;
+    bottom: -10px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.leveeLabel {
+    position: absolute;
+    left: 1016px;
+    bottom: -15px;
+    padding: 10px;
+    width: 20px;
+    font-size: 20px;
+}
+
+.riverLabel {
+    position: absolute;
+    left: 1190px;
+    bottom: -15px;
+    padding: 10px;
+    font-size: 20px;
+}
+
+.boldText {
+  font-weight: bold;
+}
+
+.roundedBox {
+  border-radius: 18px;
+  border: 2px solid #ccc;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 12px 18px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  position: relative;
+  margin: 0 10px;
+}
+
+.roundedBoxGlow,
+.roundedBox:hover {
+  box-shadow: 0 0 4px 4px #ffe066, 0 2px 8px rgba(0,0,0,0.08);
+  border-color: #ffe066;
+  z-index: 2;
+}
+
+.yellowTooltip {
+  background: #ffff99;
+  color: #222;
+  border: 2px solid #ffe066;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 16px;
+  position: absolute;
+  z-index: 10;
+  max-width: 320px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.dottedVertical {
+  border-left: 5px dashed #fe02f2;
+  height: 340px;
+  position: absolute;
+  left: 550px;
+  bottom: -10px;
+  z-index: 1;
+}
+
+.tokenRadioRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* margin-top: 10px; */
+  width: 450px
+}
+
+.tokenCalc {
+  margin-top: 2px;
+  margin-left: 10px;
+  width: 410px;
+  /* text-align: center; */
+}
+
+.rightLinks {
+  position: absolute;
+  right: -80px;
+  bottom: -250px;
+  width: 420px;
+  text-align: right;
+  z-index: 9999;
+  pointer-events: auto;
+}
+.rightLinks a {
+  font-size: 17px;
+  line-height: 1.5;
+}
+

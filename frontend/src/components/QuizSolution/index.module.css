@@ -1,0 +1,50 @@
+.tablContainer {
+    /* background-color: lightgreen;
+    border: 1px solid #a6182d; */
+}
+
+.head {
+    background-color: rgb(238, 238, 222);
+    max-width: 1200px;
+    border-radius: 5px 5px 0px 0px;
+}
+
+.table {
+    width: 1100px;
+}
+
+.row {
+    width: 1100px;
+}
+.tableMessage {
+    background-color: rgb(2, 164, 189);
+    /* height: 80px; */
+    width: 1100px;
+    color: white;
+    padding: 20px 15px 5px;
+    text-align: left;
+    line-height: 26px;
+    font-size: 24px;
+}
+
+.tableMessage p {
+    font-size: 22px;
+}
+
+.tableMessagePassed {
+    background-color: rgb(2, 164, 189);
+    /* height: 80px; */
+    width: 1100px;
+    color: white;
+    padding: 20px 15px;
+    text-align: left;
+    line-height: 26px;
+}
+
+.tableMessagePassed p{
+    font-size: 22px;
+}
+
+.paragraph li{
+    font-size: 1.2rem;
+}
