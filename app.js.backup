@@ -1,0 +1,1626 @@
+const path = require('path');
+const express = require("express");
+const app = express();
+
+const http = require('http');
+const server = http.createServer(app);
+
+const cors = require('cors');
+const helmet = require('helmet'); // 보안 헤더 미들웨어 활성화
+const url = require('url');
+
+// 환경 설정 가져오기
+const { getConfig } = require('./config/environment');
+const config = getConfig();
+
+// 환경별 CORS 설정 적용
+app.use(cors(config.cors));
+
+// 보안 미들웨어 적용
+app.use(helmet(config.security.helmet));
+
+app.use(express.json({ limit: '10mb' })); // 요청 크기 제한
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// 기본 보안 헤더 추가
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
+});
+
+const mongoDB = require('./utils/dbConnect')
+const log = require('./utils/logger');
+
+const Game = require('./model/game');
+const Session = require('./model/session')
+
+const io = require('socket.io')(server, {
+    cors: config.cors, // 환경별 CORS 설정 적용
+    transports: ['websocket', 'polling'],
+    pingTimeout: config.socket.pingTimeout,
+    pingInterval: config.socket.pingInterval,
+    connectTimeout: config.socket.connectTimeout,
+    allowEIO3: config.socket.allowEIO3
+});
+
+app.use(function(req, res, next) {
+	req.io = io;
+
+	next();
+});
+
+mongoDB();
+
+// bodyParser 제거 (express.json()으로 대체됨)
+// const bodyParser = require('body-parser')
+// app.use(bodyParser.urlencoded({extended: false}))
+// app.use(bodyParser.json())
+
+const port = config.port
+
+const sessionRouter = require('./router/sessionRouter');
+const gameRouter = require('./router/gameRouter');
+// const { start } = require('repl'); // 사용하지 않는 import 제거
+
+//데이터베이스콜은 api를 통해서 
+app.use('/api/session', sessionRouter);
+app.use('/api/game', gameRouter);
+
+// Serve static files from the React build directory
+app.use(express.static(path.join(__dirname, 'frontend/build')));
+
+// Your API routes should come before the catch-all route
+app.use('/api', require('./router/sessionRouter'));
+
+// The catch-all route that serves the React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
+});
+
+let rooms = [];
+// 설정 파일에서 게임 상수 가져오기
+const MAX_PARTICIPANTS_PER_ROOM = config.game.maxParticipantsPerRoom;
+const GAME_FLOWS = config.game.gameFlows;
+const rounds = config.game.rounds;
+const roles = config.game.roles;
+
+const ASYNC_STEPS = ['memorySurvey', 'adviceSurvey', 'nearMissPostSurvey', 'nearMissPreSurvey'];
+const SYNC_STEPS = ['rounds', 'participantsReady', 'roleSelection', 'groupChat', 'transitionNotification1', 'transitionNotification2', 'transitionNotification3', 'transitionNotification4', 'historicText', 'nearMissNotification'];
+function isAsyncStep(step) { return ASYNC_STEPS.includes(step); }
+function isSyncStep(step) { return SYNC_STEPS.includes(step); }
+
+
+
+/**
+ * 방 생성 및 대기열 시스템
+ * 
+ * isCreatingRoom: 방 생성 중인지 여부를 나타내는 락(lock) 변수
+ * - true: 현재 방이 생성 중임을 의미
+ * - false: 방 생성 가능한 상태
+ * 
+ * waitingUsers: 대기 중인 사용자들의 큐
+ * - 사용자들이 접속한 순서대로 대기열에 추가됨
+ * - FIFO(First In First Out) 방식으로 처리
+ */
+let isCreatingRoom = false;
+let waitingUsers = [];
+
+// Add at the top with other global variables
+let roomsInChatPhase = new Set();
+
+/**
+ * 사용 가능한 방 찾기
+ * @returns {number} 사용 가능한 방의 인덱스, 없으면 -1 반환
+ * 
+ * 조건:
+ * 1. 참가자 수가 최대 인원(5명)보다 적고
+ * 2. 게임이 아직 시작되지 않은 방
+ */
+function getAvailableRoomIndex(generation, variation, ktf, nm) {
+    if (nm) {
+        return rooms.findIndex((room) => 
+            room.participants?.length < MAX_PARTICIPANTS_PER_ROOM && 
+            !room.inGame &&
+            String(room.nm) === String(nm)
+        );
+    } else {
+        return rooms.findIndex((room) => 
+            room.participants?.length < MAX_PARTICIPANTS_PER_ROOM && 
+            !room.inGame &&
+            Number(room.generation) === Number(generation) &&
+            String(room.variation) === String(variation) &&
+            Number(room.ktf) === Number(ktf)
+        );
+    }
+}
+
+/**
+ * 새로운 방 생성 함수
+ * @returns {Object|null} 생성된 방 객체 또는 null
+ * 
+ * 주요 기능:
+ * 1. 방 생성 락을 사용하여 동시 생성 방지
+ * 2. 방 생성 중에는 다른 생성 요청 무시
+ * 3. 방 생성 완료 후 락 해제
+ * 4. MongoDB에 방 정보 저장
+ */
+async function createNewRoom(generation, variation, ktf, nm, gameFlowsIndex) {   
+    if (isCreatingRoom) {
+        return null;
+    }
+    
+    isCreatingRoom = true;
+    try {
+        // Get the correct game flows based on generation and ktf
+        const selectedGameFlows = GAME_FLOWS[gameFlowsIndex];
+
+        const newRoom = {
+            roomName: "",
+            gameFlows: selectedGameFlows, // Use the selected game flows
+            gameFlowsIndex: gameFlowsIndex,
+            isChosenFirstGeneration: false, // for only one game to be selected by human cognition
+            currentStepIndex: 0,
+            currentStep: 'waitingRoom',
+            stepTimers: {
+                participantsReady: 5000,
+                roleSelection: 5000,
+                transitionNotification1: 10000,
+                transitionNotification2: 10000,
+                transitionNotification3: 10000,
+                transitionNotification4: 10000,
+                groupChat: 60000,
+                historicText: 30000,
+                nearMissNotification: 30000, 
+            },
+            advice: [],
+            chatHistory: [],
+            gameDropped: false,
+            gameCreatedTime: null,
+            gameStartTime: null,
+            gameEndTime: null,
+            inGame: false,
+            gameStarted: false,
+            gameCompleted: false,
+            participants: [],
+            gameResults: [],
+            roundTimer: null,
+            waitingRoomTimer: null,
+            resultTimer: null,
+            gameStopTimer: null,
+            roundDuration: 60,
+            resultDuration: 20,
+            gameStopDuration: 40,
+            roundIndex: 0,
+            rounds: [...rounds],
+            currentRound: rounds[0],
+            totalRounds: 10,
+            roles: ['Villager1', 'Villager2', 'Villager3', 'Villager4', 'Villager5'],
+            waitingRoomTime: 300,
+            riverVariability: "low",
+            stockInvested: [],
+            leveeStocks: [],
+            leveeHeights: [],
+            waterHeights: [],
+            floodLosses: [],
+            previousLeveeStock: {0: 75},
+            isFlooded: false,
+            now: 12,
+            generation: Number(generation),
+            variation: String(variation),
+            ktf: Number(ktf),
+            nm: String(nm),
+        };
+
+        const createdRoom = await createGameToDB(newRoom);
+        
+        if (!createdRoom) {
+            return null;
+        }
+
+        // Create room name that includes the parameters
+        createdRoom.roomName = `${createdRoom._id}_${generation}_${variation}_${ktf}_${rooms.length}`;
+
+        // Update roomName in database
+        const updatedGame = await updateGameToDB(createdRoom);
+        if (!updatedGame) {
+            return null;
+        }
+
+        return updatedGame;
+    } catch (error) {
+        return null;
+    } finally {
+        isCreatingRoom = false;
+    }
+}
+
+async function createGameToDB(data) {
+    try {
+        const newGame = new Game({
+            ...data,
+            gameCreatedTime: new Date(),
+        });  
+
+        const createdGame = await newGame.save();
+        return createdGame;
+    } catch (err) {
+        return null;
+    }
+}
+
+async function updateGameToDB(room) {
+    try {
+        const updatedGame = await Game.findByIdAndUpdate(room._id, room, { new: true });
+        // console.log('updateGame updateGameToDB: ', updatedGame)
+        if (!updatedGame) {
+            return null;
+        }
+        return updatedGame;
+    } catch (err) {
+        return null;
+    }
+}
+
+const getGameFlowsIndex = (generation, ktf, nm) => {
+    if (nm == 'base') {
+        return 5;
+    } else if (nm == 'HLRN' || nm == 'HLVN' || nm == 'LLRN' || nm == 'LLVN') {
+        return 6;
+    } else if ( generation == 1 ) {
+        return 1;
+    } else if ( (generation == 2 && ktf == 1) || (generation == 3 && ktf == 1) ) {
+        return 2;
+    } else if ( (generation == 2 && ktf == 2) || (generation == 3 && ktf == 2) ) {
+        return 3;
+    } else if ( generation == 4 ) {
+        return 4;
+    } else {
+        return 0;
+    }
+}
+
+/**
+ * 대기 중인 사용자 처리 함수
+ * 
+ * 주요 기능:
+ * 1. 대기열에서 사용자를 순서대로 처리
+ * 2. 사용 가능한 방이 있으면 해당 방에 배정
+ * 3. 사용 가능한 방이 없으면 새 방 생성
+ * 4. 방 배정 시 역할 할당 및 소켓 연결
+ * 5. 방이 가득 차면 게임 시작
+ * 
+ * 처리 순서:
+ * 1. 대기열이 비어있거나 방 생성 중이면 종료
+ * 2. 사용 가능한 방 확인
+ * 3. 방이 있으면 사용자 배정
+ * 4. 방이 없으면 새 방 생성 후 사용자 배정
+ */
+async function processWaitingUsers() {
+    if (isCreatingRoom) {
+        return;
+    }
+
+    if (waitingUsers.length === 0) {
+        return;
+    }
+
+    const user = waitingUsers[0];
+    
+    let roomIndex = getAvailableRoomIndex(user.generation, user.variation, user.ktf, user.nm);
+    
+    let room;
+    if (roomIndex === -1) {
+        // No available room found, create a new one
+        const gameFlowsIndex = getGameFlowsIndex(user.generation, user.ktf, user.nm);
+        room = await createNewRoom(user.generation, user.variation, user.ktf, user.nm, gameFlowsIndex);
+        
+        if (!room) {
+            return;
+        }
+        
+        rooms.push(room);
+    } else {
+        room = rooms[roomIndex];
+    }
+
+    // Remove user from waiting queue
+    waitingUsers.shift();
+    
+    // Add participant to room with initialized results array
+    const newParticipant = {
+        id: user.socket.id,
+        sessionId: user.sessionId,
+        role: null, // We'll assign roles when the room is full
+        results: Array(10).fill(null).map((ele, index) => ({ roundIndex: index, choice: null, totalWater: 0, totalScore: 0, totalEarnings: 0})),
+        preQuiz: [],
+        memorySurvey: [],
+        adviceSurvey: [],
+        generalSurvey: [],
+        nearMissPostSurvey: [],
+        nearMissPreSurvey: [],
+        mTurkcode: getMturkcode(user.socket.id),
+        totalEarnings: 0,
+        finalTotalEarningsInDollars: 0,
+    };
+    
+    room.participants.push(newParticipant);
+
+    // Calculate players needed
+    const playersNeeded = MAX_PARTICIPANTS_PER_ROOM - room.participants.length;
+    
+    // Join socket room
+    user.socket.join(room.roomName);
+    
+    // Notify user they joined
+    user.socket.emit('joinedRoom', {
+        roomId: room._id,
+        roomName: room.roomName,
+        size: room.participants.length,
+        playersNeeded: playersNeeded,
+        gameFlows: room.gameFlows // Ensure gameFlows are sent to the client
+    });
+
+    // Notify all users in the room about the new participant
+    io.to(room.roomName).emit('updateParticipants', room.participants);
+
+    // If room is full, assign roles immediately
+    if (room.participants.length === MAX_PARTICIPANTS_PER_ROOM) {
+        assignRoles(room);
+    }
+    // Process next user if any, with a delay
+    if (waitingUsers.length > 0) {
+        setTimeout(() => {
+            processWaitingUsers();
+        }, 500);
+    }
+}
+
+function findRoomByParticipantId(participantId) {
+    return rooms.find((room) => room.participants?.some((participant) => participant.id === participantId));
+}
+
+function getRole(room) {
+    const role = room.roles[Math.floor(Math.random() * room.roles.length)]
+    let index =room.roles.indexOf(role)
+    room?.roles?.splice(index, 1)
+    return role;
+}
+
+function assignRoles(room) {
+    // Reset roles for next game
+    room.roles = ['Villager1', 'Villager2', 'Villager3', 'Villager4', 'Villager5'];
+
+    // Assign roles to participants
+    room.participants.forEach(participant => {
+        const role = getRole(room);
+        participant.role = role;
+        
+        // Emit roleSelected immediately to each participant
+        io.to(participant.id).emit('roleSelected', { role, socketId: participant.id, mTurkcode: participant.mTurkcode });
+    });
+    
+    // Create roles object for broadcast
+    const rolesObject = room.participants.reduce((acc, participant) => {
+        acc[participant.id] = participant.role;
+        return acc;
+    }, {});
+    
+    // Emit rolesAssigned event to all clients in the room immediately
+    io.in(room.roomName).emit('rolesAssigned', { roles: rolesObject });
+    
+    // GAME_FLOWS에 따라 다음 단계로 현재 단계 설정
+    advanceGameStep(room);
+    
+    // Update room in database
+    updateGameToDB(room).then(() => {
+    }).catch(err => {
+    });
+    
+    return room;
+}
+
+async function startGame(room) {
+    
+    room.gameStartTime = new Date();
+    room.gameStarted = true;
+    room.inGame = true;
+    
+    // Update room in database
+    await updateGameToDB(room);
+    
+    // Notify all clients that game is starting
+    io.in(room.roomName).emit('startGame', room);
+    
+    startRound(room);
+}
+
+async function startRound(room) {
+    
+    // Clear all existing timers
+    if (room.resultTimer) {
+        clearInterval(room.resultTimer);
+        room.resultTimer = null;
+    }
+
+    if (room.roundTimer) {
+        clearInterval(room.roundTimer);
+        room.roundTimer = null;
+    }
+
+    if (room.waitingTimeout) {
+        clearTimeout(room.waitingTimeout);
+        room.waitingTimeout = null;
+    }
+
+    if (room.roleTimeout) {
+        clearTimeout(room.roleTimeout);
+        room.roleTimeout = null;
+    }
+
+    if (room.resultTransitonTimeout) {
+        clearTimeout(room.resultTransitonTimeout);
+        room.resultTransitonTimeout = null;
+    }
+
+    if (room.chatTimer) {
+        clearInterval(room.chatTimer);
+        room.chatTimer = null;
+    }
+
+    // Update room currentStep based on round index
+    if (room.roundIndex === 10) {
+        room.now = 76;
+    } else if (room.roundIndex === 2) {
+        room.now = 34;
+    } else if (room.roundIndex === 0) {
+        room.now = 22;
+    }
+
+    // Emit round start event to all clients
+    io.in(room.roomName).emit('roundStart', {
+        roundIndex: room.roundIndex,
+        roundDuration: room.roundDuration,
+        now: room.now,
+        currentRound: room.currentRound
+    });
+
+    if (room.inGame) {
+        // Start the round timer
+        room.roundTimer = setInterval(() => {
+            room.roundDuration -= 1;
+            
+            // Safely check if all participants have made their choices
+            const everyArrived = room.participants?.every((participant) => {
+                if (!participant.results || !participant.results[room.roundIndex]) {
+                    return false;
+                }
+                return participant.results[room.roundIndex].choice !== null;
+            });
+            
+            // Emit round timer update
+            io.in(room.roomName).emit('roundDuration', room.roundDuration);
+        
+            if (everyArrived) {
+                clearInterval(room.roundTimer);
+                room.roundTimer = null;
+                startToCountResultForAll(room);
+            } else if (room.roundDuration === 0) {
+                clearInterval(room.roundTimer);
+                room.roundTimer = null;
+                startToCountResultForAll(room);
+            }
+        }, 1000);
+    }
+}
+
+function startToCountResultForAll(room) {
+    if (room.roundTimer) {
+        clearInterval(room.roundTimer)
+        room.roundTimer = null;
+    }
+
+    //최종 결산(Summary)를 보여주는 라운드의 resultDuration에 따른 화면 변화 웹소켓 emit들, finalResultTable, finalResultTableEnd
+    if (room.roundIndex == 10 ) {
+        room.resultDuration = 20;
+        let finalResultTable = false;
+
+        room.resultTimer = setInterval(() => {
+            room.resultDuration -= 1;
+            io.in(room.roomName).emit('resultDuration', room.resultDuration);
+        
+            // 총 10라운드 최종 결산을 보여주는 표 디스플레이
+            if (room.resultDuration == 2 && !finalResultTable) {
+                io.in(room.roomName).emit('finalResultTable', room);
+                room.resultDuration = 20;
+                finalResultTable = true;
+            }
+
+            if (room.resultDuration == 1) {
+                endRound(room);
+            }
+            
+            if (room.resultDuration == 0) {
+                io.in(room.roomName).emit('finalResultTableEnd', room);
+            }
+        }, 1000);
+    } else {
+        room.resultTimer = setInterval(() => {
+            room.resultDuration -= 1;
+            io.in(room.roomName).emit('resultDuration', room.resultDuration);
+        
+            if (room.resultDuration == 0) {
+                io.in(room.roomName).emit('finalResultTableEnd', room);
+                endRound(room);
+            }
+        }, 1000);
+    }
+}
+
+// depletion의 경우 그리고 Part1 이어서 Part2 게임이 진행될게 남아있는 경우
+// 빠진 각 라운드들에 임의로 totalWater 값을 압데 해줌. Part1의 마지막 라운드 변함 없는 결과 값을 추가해 줍니다. 
+function fixDataForSkippingRounds(room) {
+
+    room.participants?.forEach(participant => {
+        const totalWater = participant.results[participant.results.length - 1].totalWater;
+        const totalScore = participant.results[participant.results.length - 1].totalScore;
+        while ( participant.results.length < 10) {
+            participant.results.push({ totalWater: totalWater, totalScore: totalScore })
+        }
+    })
+
+    while (room.gameResults.length < 10) {
+        room.gameResults.push({roundIndex: room.gameResults.length, round: "", updatedSortedResult: room.gameResults[room.gameResults.length - 1].updatedSortedResult, floodLoss: 0})
+    }
+
+    // room.participants.forEach((participant, index) => {
+    //     if (index === 0) {
+    //         console.log('participant.results example after: ', participant.results)
+    //     }
+    // })
+
+    // room.gameResults.forEach((result, index) => {
+    //     console.log('participant.results example after: ', index, result.updatedSortedResult)
+    // })
+}
+
+//게임을 끝내고 또한 다음 라운드(혹 다음 상황들)를 위해서 다시 자료들을 리셋해주고 direct해주는 펑션
+function endRound(room) {
+    if (room.resultTimer) {
+        clearInterval(room.resultTimer);
+        room.resultTimer = null;
+    }
+
+    if (room.resultTransitonTimeout) {
+        clearTimeout(room.resultTransitonTimeout);
+        room.resultTransitonTimeout = null;
+    }
+
+    if (room.waitingRoomTimer) {
+        clearInterval(room.waitingRoomTimer);
+        room.waitingRoomTimer = null;
+    }
+
+    if (room.waitingTimeout) {
+        clearTimeout(room.waitingTimeout);
+        room.waitingTimeout = null;
+    }
+    if (room.roleTimeout) {
+        clearTimeout(room.roleTimeout);
+        room.roleTimeout = null;
+    }
+
+    if (room.roundTimer) {
+        clearInterval(room.roundTimer);
+        room.roundTimer = null;
+    }
+
+    // Stop the round timer
+    clearInterval(room.roundTimer);
+    
+    room.resultDuration= 20;
+
+    room.roundTimer = null;
+    
+    //라운드가 끝났음을 모든 방에 알린다.
+    io.in(room.roomName).emit('roundEnded', room);
+
+    //물이 15미만이 되면 FirstPart에서인지 SecondPart에서인지를 표시하고 GameStop 메세지를 15초 보여준다
+    // 다만 라운드인덱스가 11 혹 21 인 경우, 즉 마지막 라운드인경우는 정상종료로 처리 됩니다.
+    if (room.previousWater < 15) {        
+        if (room.roundIndex < 11) {
+         
+            room.isDepletedFirstPart = true;
+            fixDataForSkippingRounds(room);
+            startGameStop(room);
+        } else if (room.roundIndex < 21) {
+
+            room.isDepletedSecondPart = true;
+            startGameStop(room);
+        } else if (room.roundIndex == 21) {
+            startGameStop(room);
+        }
+    } else {
+        //마지막 라운드 일때(FirstPart/SecondPart) 
+        if (room.roundIndex == 9 ) {
+            // startGameStop(room);
+            room.gameCompleted = true;
+            room.inGame = false;
+            advanceGameStep(room);
+    
+        //다음라운드가 계속 진행되는 라운드일때
+        } else {
+            if (room.inGame) {
+                // Prepare for the next round
+                room.resultTransitonTimeout = setTimeout(() => {
+                    room.roundIndex += 1;
+                    room.roundDuration = 60; // Reset the round duration
+                    room.now = 22 + (room.roundIndex * 6 );
+                    room.currentRound = rounds[room.roundIndex]
+                    startRound(room);
+                }, 500); //
+            } else {
+                startRound(room);
+            }
+        }
+    }
+}
+
+function endGameStopTimer(room) {
+    if (room.gameStopTimer) {
+        clearInterval(room.gameStopTimer);
+        room.gameStopTimer = null;
+    }
+
+    if (room.roundIndex < 10) {
+        room.gameStopDuration = 40;
+        io.in(room.roomName).emit('endGameStop');
+    } 
+}
+
+function updateRoundToInitialize(room) {
+    // Stop the round timer
+    clearInterval(room.roundTimer);
+    room.roundTimer = null;
+
+    room.roundIndex += 1;
+    room.roundDuration = 60;
+    room.currentRound = rounds[room.roundIndex]
+    return room;
+}
+
+function endGame(room) {
+    io.in(room.roomName).emit('gameEnded', room);
+}
+
+const getPreviousWaterTotal = (participant, index) => {
+    //if practice round is finished return waterTotal default again
+    if (index == 1) {
+        return 0;
+    } else {
+        return Number(participant.results[index].totalWater);
+    }
+}
+
+const getPreviousScoreTotal = (participant, index) => {
+    let totalWater = 0;
+    //if practice round is finished return scoreTotal default again
+    if (index == 1) {
+        return 0;
+    } else {
+        return (Number(participant.results[index].totalScore));
+    }
+}
+
+const sortResult = (results) => {
+
+    let sortedResults = [];
+    results.forEach(ele => {
+        if (ele.role == 'Villager1') {
+            // console.log('ele to fix: ', ele)
+            sortedResults[0] = ele
+        } else if (ele.role == 'Villager2') {
+            sortedResults[1] = ele
+        } else if (ele.role == 'Villager3') {
+            sortedResults[2] = ele
+        } else if (ele.role == 'Villager4') {
+            sortedResults[3] = ele
+        } else if (ele.role == 'Villager5') {
+            sortedResults[4] = ele
+        }
+    })
+    
+    // console.log('sorted Results: ', sortedResults)
+    return sortedResults;
+}
+
+function startGameStop(room) {
+
+    //depletion message to Front End
+    if (room.isDepletedFirstPart && room.roundIndex < 9) {
+        io.in(room.roomName).emit('depletion', 'first', room.roundIndex);
+    } 
+
+    // showGameStop message to Front End
+    io.in(room.roomName).emit('showGameStop', room.roundIndex);
+
+    // Start the gameStop timer
+    if (room.roundIndex < 10) {
+        if (room.roundTimer) {
+            clearInterval(room.roundTimer);
+            room.roundTimer = null;
+        }
+
+        room.gameStopTimer = setInterval(() => {
+            if (room.gameStopDuration == 0) {
+                endGameStopTimer(room);
+    
+            } else {
+                io.in(room.roomName).emit('gameStopDuration', room.gameStopDuration);
+                room.gameStopDuration -= 1;
+            }
+        }, 1000);
+    }
+}
+
+function startSurvey(room) {
+    if (room.resultTimer) {
+        clearTimeout(room.resultTimer);
+        room.resultTimer = null;
+    }
+
+    if (room.resultTransitonTimeout) {
+        clearTimeout(room.resultTransitonTimeout);
+        room.resultTransitonTimeout = null;
+    }
+
+    if (room.waitingRoomTimer) {
+        clearTimeout(room.waitingRoomTimer);
+        room.waitingRoomTimer = null;
+    }
+
+    if (room.waitingTimeout) {
+        clearTimeout(room.waitingTimeout);
+        room.waitingTimeout = null;
+    }
+    if (room.roleTimeout) {
+        clearTimeout(room.roleTimeout);
+        room.roleTimeout = null;
+    }
+
+    if (room.roundTimer) {
+        clearInterval(room.roundTimer);
+        room.roundTimer = null;
+    }
+
+    if (room.gameStopTimer) {
+        clearInterval(room.gameStopTimer);
+        room.gameStopTimer = null;
+    }
+    io.in(room.roomName).emit('startSurvey');
+}
+
+function getMturkcode(socketid) {
+    const today = new Date();
+
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+    const day = String(today.getDate()).padStart(2, '0');
+    // console.log(`getMturkcode: ${year}${month}${day}_${socketid}_b`)
+    // console.log(`${year}${month}${day}_${socketid}_b`)
+    return `${year}${month}${day}_${socketid}_b`;
+}
+
+// Add new function to handle chat phase
+function startChatPhase(room) {
+    
+    // Clear any existing timers
+    if (room.chatTimer) {
+        clearInterval(room.chatTimer);
+        room.chatTimer = null;
+    }
+    
+    if (room.transitionTimeout) {
+        clearTimeout(room.transitionTimeout);
+        room.transitionTimeout = null;
+    }
+    
+    room.chatDuration = 60; // 60 seconds chat duration
+    
+    // Emit initial chat timer
+    io.in(room.roomName).emit('chatTimer', room.chatDuration);
+    
+    // Start chat timer
+    room.chatTimer = setInterval(() => {
+        if (room.chatDuration <= 0) {
+            clearInterval(room.chatTimer);
+            room.chatTimer = null;
+            
+            // Remove room from chat phase tracking
+            roomsInChatPhase.delete(room.roomName);
+            
+            // Emit chat phase end event instead of starting game
+            io.in(room.roomName).emit('chatPhaseEnd');
+            return;
+        }
+        
+        room.chatDuration -= 1;
+        // Emit updated timer to all clients
+        io.in(room.roomName).emit('chatTimer', room.chatDuration);
+    }, 1000);
+}
+
+//advance game step
+function advanceGameStep(room) {
+    // console.log(`advanceGameStep called for room: ${room.roomName}`);
+    // console.log(`Current step: ${room.currentStep}, Current step index: ${room.currentStepIndex}`);
+    
+    // Special handling for nearMissNotification and active rounds - don't advance if we're in these steps
+    if (room.currentStep === 'nearMissNotification' || (room.currentStep === 'rounds' && room.inGame)) {
+        // console.log(`Currently in ${room.currentStep} step (inGame: ${room.inGame}), not advancing`);
+        return;
+    }
+    
+    const gameflow = room.gameFlows;
+    const nextStepIndex = room.currentStepIndex + 1;
+    
+    // console.log(`Game flows: ${gameflow}`);
+    // console.log(`Next step index: ${nextStepIndex}, Total flows length: ${gameflow.length}`);
+    
+    if (nextStepIndex < gameflow.length) {
+        const currentStep = gameflow[room.currentStepIndex];
+        const nextStep = gameflow[nextStepIndex];
+        
+        // console.log(`Current step: ${currentStep}, Next step: ${nextStep}`);
+        
+        // If transitioning from async to sync, set up readiness tracking
+        // Only show waitingForOthers if at least one participant has completed the current step
+        if (isAsyncStep(currentStep) && isSyncStep(nextStep) && room.participants.filter(p => p.asyncStepReady).length !== room.participants.length ) {
+            const completedCount = room.participants.filter(p => p.asyncStepReady).length;
+            // console.log(`Async to sync transition: completedCount=${completedCount}, totalCount=${room.participants.length}`);
+            // Only emit waitingForOthers if at least one participant has completed the step
+            if (completedCount > 0) {
+                room.participants.forEach(p => p.asyncStepReady = false);
+                io.to(room.roomName).emit('waitingForOthers', {
+                    step: currentStep,
+                    nextStep: nextStep,
+                    completedCount: completedCount,
+                    totalCount: room.participants.length
+                });
+                // console.log('Emitting waitingForOthers, returning');
+                return;
+            }
+            // If no one has completed yet, don't advance - stay in the current step
+            // console.log('No participants completed yet, staying in current step');
+            return;
+        }
+        
+        room.currentStepIndex = nextStepIndex;
+        room.currentStep = nextStep;
+        // console.log(`Advancing to step: ${nextStep}`);
+        io.to(room.roomName).emit('stepChange', nextStep);
+        
+        // Special handling for certain steps
+        switch (nextStep) {
+            case 'rounds':
+                startGame(room);
+                break;
+            case 'groupChat':
+                startChatPhase(room);
+                break;
+            case 'nearMissNotification':
+                // nearMissNotification step: wait different times based on nm value before starting timer
+                // HLRN or LLRN: 40 seconds, HLVN or LLVN: 50 seconds
+                const delayTime = (room.nm === 'HLVN' || room.nm === 'LLVN') ? 55000 : 40000;
+                const delaySeconds = delayTime / 1000;
+                // console.log(`Entering nearMissNotification step, waiting ${delaySeconds} seconds before starting timer (nm: ${room.nm})`);
+                setTimeout(() => {
+                    // console.log('Starting timer for nearMissNotification step');
+                    startStepTimer(room, nextStep);
+                }, delayTime); 
+                return; // Don't proceed with auto-advance logic
+            case 'participantsReady':
+            case 'roleSelection':
+            case 'transitionNotification1':
+            case 'transitionNotification2':
+            case 'transitionNotification3':
+            case 'transitionNotification4':
+            case 'historicText':
+                // Start timer for other sync steps immediately
+                if (isSyncStep(nextStep)) {
+                    startStepTimer(room, nextStep);
+                }
+                break;
+            default:
+                // Handle any other steps that might be added in the future
+                // console.log(`No special handling for step: ${nextStep}`);
+                if (isSyncStep(nextStep)) {
+                    startStepTimer(room, nextStep);
+                }
+                break;
+        }
+
+        // Start timer for the next step if it has a defined duration (for non-nearMissNotification steps)
+        if (room.stepTimers[nextStep] && nextStep !== 'nearMissNotification' && nextStep !== 'rounds') {
+            setTimeout(() => {
+                advanceGameStep(room);
+            }, room.stepTimers[nextStep]);
+        }
+
+        // Special handling for nearMissNotification and rounds - don't set up auto-advance
+        if (nextStep === 'nearMissNotification' || nextStep === 'rounds') {
+            // Don't set up auto-advance timer for nearMissNotification and rounds
+            // These steps have their own special handling
+            return;
+        }
+
+        // If this is the last step in gameFlows and treament is not 'nearMiss', go to survey
+        // If treatment is 'nearMiss', frontend will handle ending the game
+        const isLastStep = room.currentStepIndex === room.gameFlows.length - 1;
+        if (isLastStep && (room.nm == '' || room.nm == undefined)) {
+            room.participants.forEach(p => {
+                io.to(p.id).emit('goToSurvey');
+            });
+        }
+    }
+}
+
+// Add after SYNC_STEPS and isSyncStep
+function startStepTimer(room, stepName) {
+    console.log(`startStepTimer called for step: ${stepName}`);
+    
+    // Special handling for nearMissNotification and rounds - don't start timer if we're not in that step
+    if ((stepName === 'nearMissNotification' && room.currentStep !== 'nearMissNotification') ||
+        (stepName === 'rounds' && room.currentStep !== 'rounds')) {
+        console.log(`Not starting timer for ${stepName} because current step is ${room.currentStep}`);
+        return;
+    }
+    
+    // Clear any previous timer for this step
+    if (room.stepTimerInterval) {
+        clearInterval(room.stepTimerInterval);
+        room.stepTimerInterval = null;
+    }
+    let ms = room.stepTimers[stepName];
+    let secondsLeft = ms ? Math.floor(ms / 1000) : 0;
+    // console.log(`Timer duration for ${stepName}: ${ms}ms, ${secondsLeft} seconds`);
+    if (!secondsLeft || isNaN(secondsLeft)) {
+        console.log(`Invalid timer duration for ${stepName}, returning`);
+        return;
+    }
+
+    // Emit initial value
+    // console.log(`Emitting initial timer value for ${stepName}: ${secondsLeft} seconds`);
+    io.in(room.roomName).emit('stepTimer', { step: stepName, secondsLeft });
+
+    room.stepTimerInterval = setInterval(() => {
+        secondsLeft -= 1;
+        // console.log(`Timer tick for ${stepName}: ${secondsLeft} seconds remaining`);
+        io.in(room.roomName).emit('stepTimer', { step: stepName, secondsLeft });
+        if (secondsLeft <= 0) {
+            // console.log(`Timer expired for ${stepName}, advancing to next step`);
+            clearInterval(room.stepTimerInterval);
+            room.stepTimerInterval = null;
+            
+            // Special handling for nearMissNotification timer expiration
+            if (stepName === 'nearMissNotification') {
+                // console.log('nearMissNotification timer expired, forcing advance to next step');
+                // Force advance to next step for nearMissNotification
+                const gameflow = room.gameFlows;
+                const nextStepIndex = room.currentStepIndex + 1;
+                if (nextStepIndex < gameflow.length) {
+                    room.currentStepIndex = nextStepIndex;
+                    room.currentStep = gameflow[nextStepIndex];
+                    // console.log(`Forced advance to step: ${room.currentStep}`);
+                    io.to(room.roomName).emit('stepChange', room.currentStep);
+                    
+                    // Start timer for the next step if it's a sync step
+                    if (isSyncStep(room.currentStep)) {
+                        startStepTimer(room, room.currentStep);
+                    }
+                }
+            } else {
+                // Automatically advance to next step when timer expires for other steps
+                advanceGameStep(room);
+            }
+        }
+    }, 1000);
+}
+
+// Modify the socket connection handler to include chat phase
+io.on("connection", socket => {
+    log.info(`User connected ${socket.id}`);
+    
+    // Handle reconnection attempts
+    socket.on("reconnectToRoom", async ({sessionId, socketId}) => {
+        
+        if (!sessionId) {
+            return;
+        }
+
+        // Find the room this session belongs to
+        const room = rooms.find(room => 
+            room.participants.some(p => p.sessionId === sessionId)
+        );
+
+        if (room) {
+            // Find the participant
+            const participant = room.participants.find(p => p.sessionId === sessionId);
+            if (participant) {
+                // Initialize results array if it doesn't exist
+                if (!participant.results) {
+                    participant.results = Array(10).fill(null).map(() => ({ choice: null, totalWater: 0, totalScore: 0 }));
+                }
+                
+                // Update the socket ID but keep all other data
+                participant.id = socket.id;
+                socket.join(room.roomName);
+                
+                // Notify the client of successful reconnection
+                socket.emit('reconnected', {
+                    roomId: room._id,
+                    roomName: room.roomName,
+                    size: room.participants.length,
+                    playersNeeded: MAX_PARTICIPANTS_PER_ROOM - room.participants.length
+                });
+
+                // Notify other participants
+                io.to(room.roomName).emit('updateParticipants', room.participants);
+                return;
+            }
+        }
+
+        // If reconnection fails, treat as new connection
+        waitingUsers.push({ socket, sessionId });
+        processWaitingUsers();
+    });
+
+    // Handle new room creation or joining
+    socket.on("createOrJoinRoom", async ({sessionId, generation, variation, ktf, nm}) => {
+        
+        if (!sessionId) {
+            socket.emit('error', { message: 'No session ID provided' });
+            return;
+        }
+
+        // Check if user is already in a room
+        const existingRoom = rooms.find(room => 
+            room.participants.some(p => p.sessionId === sessionId)
+        );
+
+        if (existingRoom) {
+            socket.join(existingRoom.roomName);
+            socket.emit('joinedRoom', {
+                roomId: existingRoom._id,
+                roomName: existingRoom.roomName,
+                size: existingRoom.participants.length,
+                playersNeeded: MAX_PARTICIPANTS_PER_ROOM - existingRoom.participants.length
+            });
+            return;
+        }
+
+        // Add to waiting queue if not already there
+        if (!waitingUsers.some(user => user.socket.id === socket.id)) {
+            waitingUsers.push({ socket, sessionId, generation, variation, ktf, nm });
+            // Process waiting users with a delay
+            setTimeout(() => {
+                processWaitingUsers();
+            }, 1000);
+        }
+
+        // When room is full, start the game flow
+        if (existingRoom?.participants.length === MAX_PARTICIPANTS_PER_ROOM) {
+            existingRoom.currentStep = 'participantsReady';
+            // io.to(existingRoom.roomName).emit('nextGameStep', 'participantsReady');
+            // Start the game flow after a short delay
+            setTimeout(() => {
+                advanceGameStep(existingRoom);
+            }, 500);
+        }
+    });
+
+    // Handle participant leaving
+    socket.on('participantLeft', async (roomName) => {
+
+        const room = rooms.find(room => room.roomName === roomName);
+
+        if (room) {
+
+            const participantWentOut = room.participants?.find(participant =>participant.id === socket.id)
+            const participantsRest = room.participants?.filter(participant =>participant.id !== socket.id)
+            
+            
+            if (room.currentStep == 'waiting') {
+                //add back roles available list to the room
+                const availableRole = room.participants?.find(participant =>participant.id === socket.id).role
+                room.roles = [...room.roles, availableRole]
+             
+                // Remove the participant from the room
+                room.participants = room.participants?.filter(participant => participant.id !== socket.id);
+                // Notify other players in the room about the updated player list
+                io.to(roomName).emit('updateParticipants', room.participants);
+        
+                // Leave the room in Socket.io
+                socket.leave(roomName);
+        
+                // 나간 사람의 소켓을 끊어냅니다.
+                const socketWhoLeft = io.sockets.sockets.get(socket.id);
+                if (socketWhoLeft) {
+
+                    socketWhoLeft.disconnect();
+                }
+
+                // 나간사람이 방의 마지막 사람이었을경우, 방을 없앱니다. If the room is empty, remove it
+                if (room.participants.length === 0) {
+                    rooms = rooms.filter(ele => ele.roomName !== roomName);
+                }
+            } else if (
+                room.currentStep === 'participantsReady' || 
+                room.currentStep === 'roleSelection' || 
+                room.currentStep === 'transitionNotification1' || 
+                room.currentStep === 'nearMissNotification' || 
+                room.currentStep === 'transitionNotification2' || 
+                room.currentStep === 'nearMissPreSurvey' || 
+                room.currentStep === 'rounds' ||
+                room.currentStep === 'transitionNotification3') {
+
+                // Leave the room in Socket.io 한 사람 나갔고 4명 남음.
+                socket.leave(roomName);
+
+                room.gameDropped = true;
+                room.gameEndTime = new Date();
+                room.participantDropped = participantWentOut;
+                //이 깨진 룸에 대한 기록 데이터베이스 저장 
+                await updateGameToDB(room)
+
+   
+                //남은 사람들만 방에 남기기, 깨진방으로 정리, 방깨진 시간 기록
+                room.participants = participantsRest;
+                //그 정보를 남겨진 사람들에게 보내고
+                io.to(roomName).emit('gamePrematureOver', room);
+
+                // Disconnect the user
+                room.participants.forEach(participant => {
+                const socketToKick = io.sockets.sockets.get(participant.id);
+                    if (socketToKick) {
+                        socketToKick.disconnect();
+                    }
+                })
+
+                // 나간 사람의 소켓을 끊어냅니다.
+                const socketWhoLeft = io.sockets.sockets.get(socket.id);
+                if (socketWhoLeft) {
+                         socketWhoLeft.disconnect();
+                }
+
+                //방 목록에서 이 방을 지웁니다. 
+                rooms = rooms.filter(ele => ele.roomName !== roomName);
+            } else if ( room.currentStep == 'rounds' && room.roundIndex == 9 && room.resultDuration < 20) {
+
+                // Leave the room in Socket.io 한 사람 나갔고 4명 남음.
+                socket.leave(roomName);
+
+                room.gameDropped = true;
+                room.gameEndTime = new Date();
+                room.participantDropped = participantWentOut;
+                //이 깨진 룸에 대한 기록 데이터베이스 저장 
+
+                await updateGameToDB(room)
+
+                //남은 사람들만 방에 남기기, 깨진방으로 정리, 방깨진 시간 기록
+                room.participants = participantsRest;
+
+                // Disconnect the user
+                room.participants.forEach(participant => {
+                const socketToKick = io.sockets.sockets.get(participant.id);
+                    if (socketToKick) {
+                        socketToKick.disconnect();
+                    }
+                })
+
+                // 나간 사람의 소켓을 끊어냅니다.
+                const socketWhoLeft = io.sockets.sockets.get(socket.id);
+                if (socketWhoLeft) {
+                    socketWhoLeft.disconnect();
+                }
+
+                //방 목록에서 이 방을 지웁니다. 
+                rooms = rooms.filter(ele => ele.roomName !== roomName);
+            }
+        }
+    });
+
+    // Handle disconnection
+    socket.on("disconnect", () => {
+        
+        // Find the room this socket was in
+        const room = rooms.find(room => 
+            room.participants.some(p => p.id === socket.id)
+        );
+
+        if (room) {
+            const participant = room.participants.find(p => p.id === socket.id);
+            
+            if (participant) {
+                // Update room state
+                if (room.participants.length === 0) {
+                    rooms = rooms.filter(r => r.roomName !== room.roomName);
+                } else {
+                    // If game is in progress, mark it as dropped
+                    if (room.inGame) {
+                        room.gameDropped = true;
+                        room.gameEndTime = new Date();
+                        room.dropReason = 'participant_disconnected';
+                        
+                        // Notify remaining participants
+                        io.to(room.roomName).emit('gameDropped', { 
+                            reason: 'participant_disconnected',
+                            role: participant.role
+                        });
+                    }            
+
+                    // Notify remaining participants about updated participant list
+                    io.to(room.roomName).emit('updateParticipants', room.participants);
+                }
+                // Remove participant from room
+                room.participants = room.participants.filter(p => p.id !== socket.id);
+            }
+        }
+
+        // Remove from waiting queue if present
+        waitingUsers = waitingUsers.filter(user => user.socket.id !== socket.id);
+    });
+
+    // Add chat message handler
+    socket.on('chatMessage', (message) => {
+        
+        // Find the room this socket is in
+        const room = rooms.find(room => 
+            room.participants.some(p => p.id === socket.id)
+        );
+
+        if (room) {
+            // Broadcast the message to all participants in the room except the sender
+            socket.to(room.roomName).emit('chatMessage', message);
+            
+            // Store the message in the room's chat history
+            if (!room.chatHistory) {
+                room.chatHistory = [];
+            }
+            room.chatHistory.push(message);
+            
+            // Update the room in the database
+            updateGameToDB(room);
+        }
+    });
+
+    socket.on('session_mongo_all', (room_name) => {
+        io.emit('session_mongo_all')
+    });
+
+    socket.on("decisionReadyTimer", (room_name) => {
+        // io.in(room_name).emit('decisionReady');
+    })
+
+    socket.on("set_isGameOver", () => {
+        let room = io.sockets.adapter.rooms.get('1')
+        io.emit('set_isGameOver')
+    })
+
+    socket.on("user_left_frontend", () => {
+
+    })
+
+    socket.on('sessionUpdate', async (data) => {
+        const { sessionID, updateData } = data;
+
+        await Session.updateOne({ _id: sessionID }, { $set: updateData })
+        .then(() => console.log('Session updated successfully'))
+        .catch(err => console.error('Error updating session:', err));
+
+        // socket.broadcast.emit('sessionUpdate', { sessionID, updateData });
+    })
+
+    socket.on('villager-decision', async (data) => {
+        try {
+            const { villagerId, decision } = data;
+            const sessionData = await Session.findOneAndUpdate(
+                { villagerId },
+                { $set: { decision } },
+                { new: true } // Return the updated document
+            );
+
+            if (sessionData) {
+                socket.emit('choice-updated', sessionData); // Send confirmation or updated data
+            }
+        } catch (error) {
+            console.error('Error updating session data:', error);
+        }
+    });
+
+    socket.on('participantNotResponded', async ({room_name, villager_id}) => {
+        
+        const room = rooms.find(room => room.roomName === room_name);
+
+        if (room) {
+
+            const participantNotResponded = room.participants?.find(participant =>participant.id === villager_id)
+            const participantsRest = room.participants?.filter(participant =>participant.id !== villager_id)
+
+            //남은 사람들만 방에 남기기, 깨진방으로 정리, 방깨진 시간 기록
+    
+            room.gameDropped = true;
+            room.gameEndTime = new Date();
+            room.participantNotResponded = participantNotResponded;
+            //이 깨진 룸에 대한 기록 데이터베이스 저장 
+
+            await updateGameToDB(room)
+     
+            const socketsInRoom = io.sockets.adapter.rooms.get(room_name)
+
+            if (socketsInRoom) {
+                for (const socketId of socketsInRoom) {
+                    if (socketId === participantNotResponded.id) {
+                        // Send a message specifically to the current socket
+                        io.to(socketId).emit('youNotResponded', participantNotResponded.role);
+                    } else {
+                        // Send a different message to other socket
+                        io.to(socketId).emit('gameNotRespondedOver', participantNotResponded.role);
+                    }
+                };
+            }
+            // 소켓에서 사용자를 땝니다.
+            room.participants.forEach(participant => {
+                const socketToKick = io.sockets.sockets.get(participant.id);
+                if (socketToKick) {
+                    socketToKick.disconnect();
+                }
+            })
+
+            // 나간 사람의 소켓을 끊어냅니다.
+            const socketWhoLeft = io.sockets.sockets.get(socket.id);
+            if (socketWhoLeft) {
+                     socketWhoLeft.disconnect();
+            }
+
+            //깨졌음으로 방을 없앱니다. Remove the room
+            rooms = rooms.filter(ele => ele.roomName !== room_name);
+
+            socket.leave(room_name);
+        
+        }
+    })
+
+    // Add new socket event listener for role assignment
+    socket.on('assignRoles', ({ roomName }) => {
+        
+        const room = rooms.find(r => r.roomName === roomName);
+        if (room) {
+            assignRoles(room);
+        } else {
+            console.error('Room not found:', roomName);
+        }
+    });
+
+    // Add new socket event for starting chat phase
+    socket.on('startChatPhase', ({ roomName }) => {
+        
+        // Check if room is already in chat phase
+        if (roomsInChatPhase.has(roomName)) {
+            return;
+        }
+        
+        const room = rooms.find(r => r.roomName === roomName);
+        if (room) {
+            roomsInChatPhase.add(roomName); // Mark room as in chat phase
+            startChatPhase(room);
+        } else {
+            console.error('Room not found for chat phase:', roomName);
+        }
+    });
+
+    socket.on("decisionNotice", async ({room_name, villager_id, choice}) => {
+        
+        const roomFound = rooms.find((room) => room.roomName == room_name)
+
+        const round = roomFound?.currentRound;
+        const roundIndex = roomFound.roundIndex;
+        const participants = roomFound.participants;
+
+        const participant = participants.find((participant => participant.id == villager_id))
+
+        const getEarningBeforeLoss = (choice) => {
+            const choiceNumeral = Number(choice)
+         
+            if (choiceNumeral === 0) {
+                return 11;
+            } else if (choiceNumeral > 0 && choiceNumeral <= 10) {
+                return (10 - choiceNumeral)*3
+            } else {
+                return 'hmmm';
+            }
+        }
+
+        const getWaterHeight = (roundIndex) => {
+            const lowVariableWaterLevel = [9, 9, 9, 9, 10, 12, 10, 10, 12, 10, 9, 9];
+            const highVariableWaterLevel = [8, 7, 14, 11, 16, 11, 9, 16, 8, 10];
+            // const highVariableWaterLevel = [9, 9, 8, 7, 14, 11, 16, 11, 9, 16, 8, 10];
+            return roomFound.nm.length > 0 ? highVariableWaterLevel[roundIndex] : highVariableWaterLevel[roundIndex]
+        }
+
+        const calculateStockInvested = (room, sortedResult, roundIndex) => {
+        
+            const totalStockInvested = sortedResult.reduce((acc, value) => Number(value.results[roundIndex]?.choice) + acc, 0)
+            room.stockInvested[roundIndex] = totalStockInvested;
+            return totalStockInvested;
+        }
+
+        const getDepreciatedPreviousLeveeStock = (roundIndex) => {
+            if (roundIndex < 1) {
+                return 75;
+            } else if (roundIndex >= 1 && roundIndex < 11) {
+                // console.log('roomFound.previousLeveeStock[roundIndex - 1] getDepreciatedPreviousLeveeStock: ', roomFound.previousLeveeStock[roundIndex - 1])
+                return roomFound.previousLeveeStock[roundIndex - 1] - 25 < 30 ? 30 : roomFound.previousLeveeStock[roundIndex - 1] - 25;
+            }
+        }
+        const getLeveeHeight = (currentLeveeStock) => {
+            if (currentLeveeStock < 30) {
+                return 0;
+            } else if (currentLeveeStock < 40) {
+                return 2;
+            } else if (currentLeveeStock < 50) {
+                return 4;
+            } else if (currentLeveeStock < 60) {
+                return 6;
+            } else if (currentLeveeStock < 70) {
+                return 8;
+            } else if (currentLeveeStock < 80) {
+                return 10;
+            } else if (currentLeveeStock < 90) {
+                return 12;
+            } else if (currentLeveeStock < 100) {
+                return 14;
+            } else if (currentLeveeStock < 110) {
+                return 16;
+            } else if (currentLeveeStock < 120) {
+                return 18;
+            } else if (currentLeveeStock >= 120) {
+                return 20;
+            }
+        }
+
+        const getFloodSeverity = (severity) => {
+            if (severity <= 0) {
+                return 0;
+            } else if (severity === 1 || severity === 2) {
+                return 10;
+            } else if (severity === 3 || severity === 4) {
+                return 30;
+            }else if (severity === 5 || severity === 6) {
+                return 50;
+            } else if (severity === 7 || severity === 8) {
+                return 70;
+            } else if (severity === 9 || severity === 10) {
+                return 90;
+            } else if (severity >= 11 ) {
+                return 100;
+            } 
+        }
+
+        const getFloodLoss = (roomFound, sortedResult, stockInvested, waterHeight, roundIndex) => {
+            const depreciatedPreviousLeveeStock = getDepreciatedPreviousLeveeStock(roundIndex) 
+            const currentLeveeStock = depreciatedPreviousLeveeStock + stockInvested;
+            const currentLeveeHeight = getLeveeHeight(currentLeveeStock);
+            const isFloodLoss = currentLeveeHeight < waterHeight
+            const heightComparisionResult =  waterHeight - currentLeveeHeight;
+            const floodSeverity = getFloodSeverity(heightComparisionResult)
+            return {currentLeveeStock, currentLeveeHeight, floodSeverity};
+        }
+
+        const earningBeforeLoss = getEarningBeforeLoss(choice)
+
+        const getEarningsAfterLoss = (sortedResult, floodSeverity) => {
+            const mappedSortedResult = sortedResult.map((participant, i) => {
+                let earningAfterLoss;
+                const tokensInvested = 10 - Number(participant.results[roundIndex]?.choice)
+                earningAfterLoss = tokensInvested === 10 ? 11 : tokensInvested * 3 * (100 - floodSeverity) / 100
+                participant.results[roundIndex].earningAfterLoss = Math.round(earningAfterLoss * 100) / 100;
+
+                return {...participant, totalEarnings: Math.round((participant.totalEarnings + earningAfterLoss) * 100) / 100}
+            })
+            return mappedSortedResult;
+        }
+
+        participant.results = participant?.results?.map((ele) => ele.roundIndex == roundIndex ? ({...ele, roundIndex, round, choice, earningBeforeLoss}) : ele)
+        participant.totalEarnings = participant.totalEarnings + participant.results[roundIndex].totalEarnings;
+
+        io.in(room_name).emit('resultArrived', {participants, roundIndex});
+
+        const allFiveEnteredResults = participants.filter(
+            participant =>
+                participant.results &&
+                participant.results[roundIndex] &&
+                participant.results[roundIndex].choice !== null &&
+                participant.results[roundIndex].choice !== undefined &&
+                participant.results[roundIndex].choice !== ''
+        );
+
+        if (allFiveEnteredResults.length === 5) {
+            const sortedResult = sortResult(allFiveEnteredResults, roomFound);
+
+            sortedResult.forEach((participant, i) => {
+                if (i === 0) {
+                }
+            });
+
+            // 사람들이 투자한 총 토큰(스탁)  
+            const stockInvested = calculateStockInvested(roomFound, sortedResult, roundIndex)
+            // 홍수의 높이
+            const waterHeight = getWaterHeight(roundIndex);
+            // flood loss
+            const {currentLeveeStock, currentLeveeHeight, floodSeverity} = getFloodLoss(roomFound, sortedResult, stockInvested, waterHeight, roundIndex)
+
+            roomFound.leveeStocks[roundIndex] = currentLeveeStock;
+            roomFound.leveeHeights[roundIndex] = currentLeveeHeight;
+            roomFound.waterHeights[roundIndex] = waterHeight;
+            roomFound.floodLosses[roundIndex] = floodSeverity;
+
+            // 홍수후 손실된 이익
+            const updatedSortedResultWithNewEarnings = getEarningsAfterLoss(sortedResult, floodSeverity) 
+
+            //특정 round 일 경우. 
+            if (roundIndex == 9) {
+                roomFound.gameCompleted = true;
+                roomFound.gameEndTime = new Date();
+            } 
+
+            roomFound.gameResults = {roundIndex, round, ...updatedSortedResultWithNewEarnings, floodLoss: floodSeverity}
+            roomFound.participants = roomFound.participants.map(participant => {
+                const updatedParticipant = updatedSortedResultWithNewEarnings.find(p => p.id === participant.id);
+                return updatedParticipant ? { ...participant, ...updatedParticipant } : participant;
+            });
+
+            roomFound.previousLeveeStock[roundIndex] = currentLeveeStock;
+
+            //game state save in DB
+            await updateGameToDB(roomFound)
+
+            //game state share to every villagers
+            io.in(room_name).emit('totalGroupResultArrived', {waterHeight, currentLeveeHeight, currentLeveeStock, floodLoss: floodSeverity, result: updatedSortedResultWithNewEarnings, roundIndex});
+        }
+    })
+
+    // Add a generic socket event handler for asyncStepComplete
+    socket.on('asyncStepComplete', ({ roomName, participantId, step }) => {
+        const room = rooms.find(r => r.roomName === roomName);
+        if (!room) return;
+        const participant = room.participants.find(p => p.id === participantId);
+        if (participant) participant.asyncStepReady = true;
+        const completedCount = room.participants.filter(p => p.asyncStepReady).length;
+        const totalCount = room.participants.length;
+        
+        // Emit waitingForOthers to all participants in the room
+        io.to(room.roomName).emit('waitingForOthers', {
+            step,
+            completedCount,
+            totalCount
+        });
+        
+        // If this async step is the last step in gameFlows, redirect this user to /survey
+        const isLastStep = room.currentStepIndex === room.gameFlows.length - 1;
+        if (isLastStep) {
+            io.to(participantId).emit('goToSurvey');
+        }
+        // Only advance to next step if all participants have completed the current async step
+        if (completedCount === totalCount) {
+            advanceGameStep(room)
+        }
+    });
+})
+
+server.listen(port, () => {
+        log.info(`🚀 Server is listening at port: ${port} 🚀`);
+        console.log(`Server is running on the port ${port}, from express server`)
+    }
+)

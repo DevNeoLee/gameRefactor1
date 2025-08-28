@@ -1,18 +1,26 @@
 const express = require('express');
 const Game = require('../model/game'); 
 const { StatusCodes } = require('http-status-codes'); // for clear status codes
+const { 
+  validateInput, 
+  validateGameCreation, 
+  validateGameUpdate,
+  validateSessionQuery,
+  sanitizeRequestBody 
+} = require('../utils/validation');
+const log = require('../utils/logger');
 
 const router = express.Router();
 
+// 모든 라우트에 입력 정제 미들웨어 적용
+router.use(sanitizeRequestBody);
+
 // Get games occured on the day from query (GET /)
-router.get('/', async (req, res) => {
+router.get('/', 
+  validateInput(validateSessionQuery), // 입력 검증 추가
+  async (req, res) => {
   try {
     const { year, month, day } = req.query;
-
-    // Validate the query parameters
-    if (!year || !month || !day) {
-      return res.status(400).json({ message: 'Please provide year, month, and day parameters.' });
-    }
 
     // Convert month from string to integer and adjust because months are 0-indexed
     const parsedYear = parseInt(year, 10);
@@ -40,45 +48,114 @@ router.get('/', async (req, res) => {
       },
     });
 
-    console.log('games api: ', games.length, 'EST date:', `${parsedYear}-${parsedMonth + 1}-${parsedDay}`);
+    log.info('게임 조회 완료', { 
+      count: games.length, 
+      date: `${parsedYear}-${parsedMonth + 1}-${parsedDay}`,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString()
+    });
 
     // Return the found games
-    return res.status(200).json({ success: true, data: games });
+    return res.status(200).json({ 
+      success: true, 
+      data: games,
+      count: games.length,
+      date: `${parsedYear}-${parsedMonth + 1}-${parsedDay}`
+    });
   } catch (err) {
     // Handle errors
-    console.error(err);
-    return res.status(500).json({ message: 'Server error', error: err.message });
+    log.error('게임 조회 중 오류 발생:', { 
+      error: err.message, 
+      stack: err.stack,
+      query: req.query 
+    });
+    return res.status(500).json({ 
+      success: false,
+      message: '서버 오류가 발생했습니다.',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
 // Create a new game (POST /)
-router.post('/', async (req, res) => {
+router.post('/', 
+  validateInput(validateGameCreation), // 입력 검증 추가
+  async (req, res) => {
   try {
     const newGame = new Game({
       ...req.body,
       gameCreatedTime: new Date(),
     });
+    
     const savedGame = await newGame.save();
-    res.status(StatusCodes.CREATED).json(savedGame);
+    
+    log.info('새 게임 생성 완료:', { 
+      gameId: savedGame._id,
+      generation: savedGame.generation,
+      variation: savedGame.variation,
+      ktf: savedGame.ktf
+    });
+    
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      data: savedGame,
+      message: '게임이 성공적으로 생성되었습니다.'
+    });
   } catch (err) {
-    console.error(err);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Error creating game" });
+    log.error('게임 생성 중 오류 발생:', { 
+      error: err.message, 
+      stack: err.stack,
+      body: req.body 
+    });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
+      success: false,
+      message: "게임 생성 중 오류가 발생했습니다.",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
 // Update a game (PUT /)
-router.put('/', async (req, res) => {
+router.put('/', 
+  validateInput(validateGameUpdate), // 입력 검증 추가
+  async (req, res) => {
   try {
-    const updatedGame = await Game.findByIdAndUpdate(req.body._id, req.body, { new: true });
+    const updatedGame = await Game.findByIdAndUpdate(
+      req.body._id, 
+      req.body, 
+      { new: true, runValidators: true }
+    );
 
     if (!updatedGame) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "Game not found" }); // Clear error message
+      log.warn('게임 업데이트 실패: 게임을 찾을 수 없음', { gameId: req.body._id });
+      return res.status(StatusCodes.NOT_FOUND).json({ 
+        success: false,
+        message: "게임을 찾을 수 없습니다." 
+      });
     }
-    console.log("Updated game to MongoDB through API", updatedGame);
-    res.status(StatusCodes.OK).json({ success: true, data: updatedGame });
+    
+    log.info("게임 업데이트 완료:", { 
+      gameId: updatedGame._id,
+      updatedFields: Object.keys(req.body)
+    });
+    
+    res.status(StatusCodes.OK).json({ 
+      success: true, 
+      data: updatedGame,
+      message: '게임이 성공적으로 업데이트되었습니다.'
+    });
   } catch (err) {
-    console.error(err);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Error updating game" });
+    log.error('게임 업데이트 중 오류 발생:', { 
+      error: err.message, 
+      stack: err.stack,
+      gameId: req.body._id,
+      body: req.body 
+    });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
+      success: false,
+      message: "게임 업데이트 중 오류가 발생했습니다.",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
