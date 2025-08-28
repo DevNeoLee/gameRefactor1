@@ -12,7 +12,7 @@ class ParticipantManager {
     this.io = io;
     this.config = config;
     this.roomManager = null; // Will be injected by GameManager
-    this.gameFlowManager = null; // GameFlowManager 참조 추가
+    this.gameFlowManager = null; // Add GameFlowManager reference
     
     logger.info('ParticipantManager initialized');
   }
@@ -126,7 +126,7 @@ class ParticipantManager {
         // Remove participant from room
         room.participants = participantsRest;
         
-        // CRITICAL: Notify remaining participants about updated participant list (원본 app.js와 동일)
+        // CRITICAL: Notify remaining participants about updated participant list (identical to original app.js)
         // This ensures waiting room participants know who left
         this.io.to(roomName).emit('updateParticipants', room.participants);
         
@@ -145,28 +145,28 @@ class ParticipantManager {
         }
 
       } else if (this.isGameInProgress(room.currentStep)) {
-        // Game is in progress, mark as dropped (원본 app.js와 동일)
+        // Game is in progress, mark as dropped (identical to original app.js)
         gameDropped = true;
         room.gameDropped = true;
         room.gameEndTime = new Date();
         room.participantDropped = participantWentOut;
         
-        // Leave socket room (원본 app.js와 동일)
+        // Leave socket room (identical to original app.js)
         socket.leave(roomName);
         
-        // Update room participants (원본 app.js와 동일)
+        // Update room participants (identical to original app.js)
         room.participants = participantsRest;
         
-        // CRITICAL: Update database before sending notifications (원본 app.js와 동일)
+        // CRITICAL: Update database before sending notifications (identical to original app.js)
         if (this.roomManager) {
           await this.roomManager.updateGameToDB(room);
         }
         
-        // CRITICAL: Send gamePrematureOver event (원본 app.js와 동일)
+        // CRITICAL: Send gamePrematureOver event (identical to original app.js)
         // This is what the frontend expects, not gameDropped
         this.io.to(roomName).emit('gamePrematureOver', room);
         
-        // Disconnect remaining participants (원본 app.js와 동일)
+        // Disconnect remaining participants (identical to original app.js)
         room.participants.forEach(participant => {
           const socketToKick = this.io.sockets.sockets.get(participant.id);
           if (socketToKick) {
@@ -174,13 +174,13 @@ class ParticipantManager {
           }
         });
 
-        // Disconnect the leaving participant (원본 app.js와 동일)
+        // Disconnect the leaving participant (identical to original app.js)
         const socketWhoLeft = this.io.sockets.sockets.get(socket.id);
         if (socketWhoLeft) {
           socketWhoLeft.disconnect();
         }
 
-        // Remove room from list (원본 app.js와 동일)
+        // Remove room from list (identical to original app.js)
         // CRITICAL: Remove room immediately after sending notifications, just like original app.js
         this.roomManager.removeRoom(roomName);
       }
@@ -256,7 +256,7 @@ class ParticipantManager {
       // Emit rolesAssigned event to all clients in the room immediately (following original app.js)
       this.io.in(room.roomName).emit('rolesAssigned', { roles: rolesObject });
       
-      // GAME_FLOWS에 따라 다음 단계로 현재 단계 설정 (following original app.js exactly)
+      // Set current step to next step according to GAME_FLOWS (following original app.js exactly)
       // This will be handled by GameFlowManager.advanceGameStep(room)
       
       // Update room in database (following original app.js)
@@ -363,7 +363,7 @@ class ParticipantManager {
       room.gameEndTime = new Date();
       room.participantNotResponded = participantNotResponded;
 
-      // CRITICAL: Notify all participants about game drop (원본 app.js와 동일)
+      // CRITICAL: Notify all participants about game drop (identical to original app.js)
       this.io.to(roomName).emit('gameDropped', { 
         reason: 'participant_not_responded',
         role: participantNotResponded.role
@@ -384,7 +384,7 @@ class ParticipantManager {
         }
       }
       
-      // CRITICAL: Notify remaining participants about updated participant list (원본 app.js와 동일)
+      // CRITICAL: Notify remaining participants about updated participant list (identical to original app.js)
       // Remove the non-responding participant before notifying others
       room.participants = room.participants.filter(p => p.id !== villagerId);
       this.io.to(roomName).emit('updateParticipants', room.participants);
@@ -448,7 +448,7 @@ class ParticipantManager {
           room.gameEndTime = new Date();
           room.dropReason = 'participant_disconnected';
           
-          // CRITICAL: Notify remaining participants about game drop (원본 app.js와 동일)
+          // CRITICAL: Notify remaining participants about game drop (identical to original app.js)
           this.io.to(room.roomName).emit('gameDropped', { 
             reason: 'participant_disconnected',
             role: participant.role
@@ -458,7 +458,7 @@ class ParticipantManager {
         // CRITICAL: Remove participant from room BEFORE notifying others
         room.participants = room.participants.filter(p => p.id !== socket.id);
         
-        // CRITICAL: Notify remaining participants about updated participant list (원본 app.js와 동일)
+        // CRITICAL: Notify remaining participants about updated participant list (identical to original app.js)
         // This ensures all other room members know who left and can update their UI
         this.io.to(room.roomName).emit('updateParticipants', room.participants);
       }
@@ -479,7 +479,7 @@ class ParticipantManager {
   }
 
   /**
-   * Handle new room creation or joining (원본 app.js와 동일)
+   * Handle new room creation or joining (identical to original app.js)
    * @param {Object} socket - Socket instance
    * @param {Object} data - Room data
    * @returns {void}
@@ -513,13 +513,13 @@ class ParticipantManager {
         this.roomManager.addToWaitingQueue(socket, sessionId, { generation, variation, ktf, nm });
         logger.info(`User ${sessionId} added to waiting queue`);
         
-        // Process waiting users with a delay (원본 app.js와 동일)
+        // Process waiting users with a delay (identical to original app.js)
         setTimeout(() => {
           this.roomManager.processWaitingUsers();
         }, 1000);
       }
 
-      // When room is full, start the game flow (원본 app.js와 동일)
+      // When room is full, start the game flow (identical to original app.js)
       if (existingRoom?.participants.length === this.config.game.maxParticipantsPerRoom) {
         existingRoom.currentStep = 'participantsReady';
         // Start the game flow after a short delay

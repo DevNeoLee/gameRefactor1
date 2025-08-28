@@ -12,12 +12,12 @@ const log = require('../utils/logger');
 
 const router = express.Router();
 
-// 모든 라우트에 입력 정제 미들웨어 적용
+// Apply input sanitization middleware to all routes
 router.use(sanitizeRequestBody);
 
-// Get games occured on the day from query (GET /)
+// Get games occurred on the day from query (GET /)
 router.get('/', 
-  validateInput(validateSessionQuery), // 입력 검증 추가
+  validateInput(validateSessionQuery), // Add input validation
   async (req, res) => {
   try {
     const { year, month, day } = req.query;
@@ -48,7 +48,7 @@ router.get('/',
       },
     });
 
-    log.info('게임 조회 완료', { 
+    log.info('Game query completed', { 
       count: games.length, 
       date: `${parsedYear}-${parsedMonth + 1}-${parsedDay}`,
       startDate: startDate.toISOString(),
@@ -64,14 +64,14 @@ router.get('/',
     });
   } catch (err) {
     // Handle errors
-    log.error('게임 조회 중 오류 발생:', { 
+    log.error('Error occurred during game query:', { 
       error: err.message, 
       stack: err.stack,
       query: req.query 
     });
     return res.status(500).json({ 
       success: false,
-      message: '서버 오류가 발생했습니다.',
+      message: 'Server error occurred.',
       error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
   }
@@ -79,7 +79,7 @@ router.get('/',
 
 // Create a new game (POST /)
 router.post('/', 
-  validateInput(validateGameCreation), // 입력 검증 추가
+  validateInput(validateGameCreation), // Add input validation
   async (req, res) => {
   try {
     const newGame = new Game({
@@ -89,7 +89,7 @@ router.post('/',
     
     const savedGame = await newGame.save();
     
-    log.info('새 게임 생성 완료:', { 
+    log.info('New game creation completed:', { 
       gameId: savedGame._id,
       generation: savedGame.generation,
       variation: savedGame.variation,
@@ -99,17 +99,17 @@ router.post('/',
     res.status(StatusCodes.CREATED).json({
       success: true,
       data: savedGame,
-      message: '게임이 성공적으로 생성되었습니다.'
+      message: 'Game created successfully.'
     });
   } catch (err) {
-    log.error('게임 생성 중 오류 발생:', { 
+    log.error('Error occurred during game creation:', { 
       error: err.message, 
       stack: err.stack,
       body: req.body 
     });
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
       success: false,
-      message: "게임 생성 중 오류가 발생했습니다.",
+      message: "Error occurred during game creation.",
       error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
   }
@@ -117,7 +117,7 @@ router.post('/',
 
 // Update a game (PUT /)
 router.put('/', 
-  validateInput(validateGameUpdate), // 입력 검증 추가
+  validateInput(validateGameUpdate), // Add input validation
   async (req, res) => {
   try {
     const updatedGame = await Game.findByIdAndUpdate(
@@ -127,14 +127,14 @@ router.put('/',
     );
 
     if (!updatedGame) {
-      log.warn('게임 업데이트 실패: 게임을 찾을 수 없음', { gameId: req.body._id });
+      log.warn('Game update failed: Game not found', { gameId: req.body._id });
       return res.status(StatusCodes.NOT_FOUND).json({ 
         success: false,
-        message: "게임을 찾을 수 없습니다." 
+        message: "Game not found" 
       });
     }
     
-    log.info("게임 업데이트 완료:", { 
+    log.info("Game update completed:", { 
       gameId: updatedGame._id,
       updatedFields: Object.keys(req.body)
     });
@@ -142,10 +142,10 @@ router.put('/',
     res.status(StatusCodes.OK).json({ 
       success: true, 
       data: updatedGame,
-      message: '게임이 성공적으로 업데이트되었습니다.'
+      message: 'Game updated successfully.'
     });
   } catch (err) {
-    log.error('게임 업데이트 중 오류 발생:', { 
+    log.error('Error occurred during game update:', { 
       error: err.message, 
       stack: err.stack,
       gameId: req.body._id,
@@ -153,7 +153,7 @@ router.put('/',
     });
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
       success: false,
-      message: "게임 업데이트 중 오류가 발생했습니다.",
+      message: "Error occurred during game update.",
       error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
   }

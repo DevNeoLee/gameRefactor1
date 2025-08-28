@@ -26,19 +26,19 @@ class GameManager {
     this.gameStateManager.setRoomManager(this.roomManager);
     this.participantManager.setRoomManager(this.roomManager);
     
-    // ParticipantManager에 GameFlowManager 참조 주입
+    // Inject GameFlowManager reference to ParticipantManager
     this.participantManager.setGameFlowManager(this.gameFlowManager);
     
-    // GameStateManager에 io 참조 주입
+    // Inject io reference to GameStateManager
     this.gameStateManager.setIo(this.io);
     
-    // RoomManager에 GameFlowManager 참조 주입 (원본 app.js 로직을 위해)
+    // Inject GameFlowManager reference to RoomManager (for original app.js logic)
     this.roomManager.setGameFlowManager(this.gameFlowManager);
     
-    // GameFlowManager에 GameStateManager 참조 주입 (원본 app.js 로직을 위해)
+    // Inject GameStateManager reference to GameFlowManager (for original app.js logic)
     this.gameFlowManager.setGameStateManager(this.gameStateManager);
     
-    // GameStateManager에 GameFlowManager 참조 주입 (원본 app.js 로직을 위해)
+    // Inject GameFlowManager reference to GameStateManager (for original app.js logic)
     this.gameStateManager.setGameFlowManager(this.gameFlowManager);
     
     // Setup Socket.IO event handlers
@@ -49,59 +49,59 @@ class GameManager {
 
   setupSocketHandlers() {
     this.io.on('connection', (socket) => {
-      // 원본 app.js와 동일한 이벤트 핸들러들
+      // Event handlers identical to original app.js
       
-      // Handle reconnection attempts (원본 app.js와 동일)
+      // Handle reconnection attempts (identical to original app.js)
       socket.on('reconnectToRoom', (data) => {
         this.participantManager.handleReconnection(socket, data);
       });
 
-      // Handle new room creation or joining (원본 app.js와 동일)
+      // Handle new room creation or joining (identical to original app.js)
       socket.on('createOrJoinRoom', (data) => {
         this.participantManager.handleCreateOrJoinRoom(socket, data);
       });
 
-      // Handle participant leaving (원본 app.js와 동일)
+      // Handle participant leaving (identical to original app.js)
       socket.on('participantLeft', (data) => {
         this.participantManager.handleParticipantLeave(socket, data);
       });
 
-      // Handle game decisions (원본 app.js와 동일)
+      // Handle game decisions (identical to original app.js)
       socket.on('decisionNotice', (data) => {
         this.gameStateManager.handleGameDecision(socket, data);
       });
 
-      // Handle async step completion (원본 app.js와 동일)
+      // Handle async step completion (identical to original app.js)
       socket.on('asyncStepComplete', (data) => {
         this.gameFlowManager.handleAsyncStepComplete(data.roomName, data.participantId, data.step);
       });
 
-      // Handle chat messages (원본 app.js와 동일)
+      // Handle chat messages (identical to original app.js)
       socket.on('chatMessage', (data) => {
         this.gameFlowManager.handleChatMessage(socket, data);
       });
 
-      // Handle role assignment (원본 app.js와 동일)
+      // Handle role assignment (identical to original app.js)
       socket.on('assignRoles', (data) => {
         this.participantManager.handleRoleAssignment(socket, data);
       });
 
-      // Handle chat phase (원본 app.js와 동일)
+      // Handle chat phase (identical to original app.js)
       socket.on('startChatPhase', (data) => {
         this.gameFlowManager.handleChatPhase(socket, data);
       });
 
-      // Handle session updates (원본 app.js와 동일)
+      // Handle session updates (identical to original app.js)
       socket.on('sessionUpdate', (data) => {
         this.participantManager.handleSessionUpdate(socket, data);
       });
 
-      // Handle villager decisions (원본 app.js와 동일)
+      // Handle villager decisions (identical to original app.js)
       socket.on('villager-decision', (data) => {
         this.gameStateManager.handleVillagerDecision(socket, data);
       });
 
-      // Handle participant non-response (원본 app.js와 동일)
+      // Handle participant non-response (identical to original app.js)
       socket.on('participantNotResponded', (data) => {
         this.gameFlowManager.handleParticipantNonResponse(socket, data);
       });
@@ -150,7 +150,7 @@ class GameManager {
       if (result.success) {
         socket.emit('joinedRoom', result.data);
         
-        // CRITICAL: Notify other participants about new participant joining (원본 app.js와 동일)
+        // CRITICAL: Notify other participants about new participant joining (identical to original app.js)
         this.io.to(result.roomName).emit('updateParticipants', result.participants);
         
         // Start game flow if room is full
