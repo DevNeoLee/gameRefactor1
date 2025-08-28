@@ -126,6 +126,10 @@ class ParticipantManager {
         // Remove participant from room
         room.participants = participantsRest;
         
+        // CRITICAL: Notify remaining participants about updated participant list (원본 app.js와 동일)
+        // This ensures waiting room participants know who left
+        this.io.to(roomName).emit('updateParticipants', room.participants);
+        
         // Leave socket room
         socket.leave(roomName);
         
@@ -141,19 +145,28 @@ class ParticipantManager {
         }
 
       } else if (this.isGameInProgress(room.currentStep)) {
-        // Game is in progress, mark as dropped
+        // Game is in progress, mark as dropped (원본 app.js와 동일)
         gameDropped = true;
         room.gameDropped = true;
         room.gameEndTime = new Date();
         room.participantDropped = participantWentOut;
         
-        // Leave socket room
+        // Leave socket room (원본 app.js와 동일)
         socket.leave(roomName);
         
-        // Update room participants
+        // Update room participants (원본 app.js와 동일)
         room.participants = participantsRest;
         
-        // Disconnect remaining participants
+        // CRITICAL: Update database before sending notifications (원본 app.js와 동일)
+        if (this.roomManager) {
+          await this.roomManager.updateGameToDB(room);
+        }
+        
+        // CRITICAL: Send gamePrematureOver event (원본 app.js와 동일)
+        // This is what the frontend expects, not gameDropped
+        this.io.to(roomName).emit('gamePrematureOver', room);
+        
+        // Disconnect remaining participants (원본 app.js와 동일)
         room.participants.forEach(participant => {
           const socketToKick = this.io.sockets.sockets.get(participant.id);
           if (socketToKick) {
@@ -161,13 +174,14 @@ class ParticipantManager {
           }
         });
 
-        // Disconnect the leaving participant
+        // Disconnect the leaving participant (원본 app.js와 동일)
         const socketWhoLeft = this.io.sockets.sockets.get(socket.id);
         if (socketWhoLeft) {
           socketWhoLeft.disconnect();
         }
 
-        // Remove room from list
+        // Remove room from list (원본 app.js와 동일)
+        // CRITICAL: Remove room immediately after sending notifications, just like original app.js
         this.roomManager.removeRoom(roomName);
       }
 
@@ -349,6 +363,12 @@ class ParticipantManager {
       room.gameEndTime = new Date();
       room.participantNotResponded = participantNotResponded;
 
+      // CRITICAL: Notify all participants about game drop (원본 app.js와 동일)
+      this.io.to(roomName).emit('gameDropped', { 
+        reason: 'participant_not_responded',
+        role: participantNotResponded.role
+      });
+
       // Get sockets in room
       const socketsInRoom = this.io.sockets.adapter.rooms.get(roomName);
 
@@ -363,6 +383,11 @@ class ParticipantManager {
           }
         }
       }
+      
+      // CRITICAL: Notify remaining participants about updated participant list (원본 app.js와 동일)
+      // Remove the non-responding participant before notifying others
+      room.participants = room.participants.filter(p => p.id !== villagerId);
+      this.io.to(roomName).emit('updateParticipants', room.participants);
 
       // Disconnect all participants
       room.participants.forEach(participant => {
@@ -423,15 +448,19 @@ class ParticipantManager {
           room.gameEndTime = new Date();
           room.dropReason = 'participant_disconnected';
           
-          // Notify remaining participants
+          // CRITICAL: Notify remaining participants about game drop (원본 app.js와 동일)
           this.io.to(room.roomName).emit('gameDropped', { 
             reason: 'participant_disconnected',
             role: participant.role
           });
         }            
 
-        // Remove participant from room
+        // CRITICAL: Remove participant from room BEFORE notifying others
         room.participants = room.participants.filter(p => p.id !== socket.id);
+        
+        // CRITICAL: Notify remaining participants about updated participant list (원본 app.js와 동일)
+        // This ensures all other room members know who left and can update their UI
+        this.io.to(room.roomName).emit('updateParticipants', room.participants);
       }
 
       logger.info(`Participant ${participant.sessionId} disconnected from room ${room.roomName}`);

@@ -361,7 +361,7 @@ class GameFlowManager {
         logger.debug(`Restored roundDuration to 60 for room ${room.roomName}`);
       }
       
-      if (room.resultDuration === 0) {
+      if (room.resultDuration === 20) {
         room.resultDuration = 20; // Restore default result duration
         logger.debug(`Restored resultDuration to 20 for room ${room.roomName}`);
       }

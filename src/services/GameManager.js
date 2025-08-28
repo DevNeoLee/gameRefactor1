@@ -149,6 +149,8 @@ class GameManager {
       
       if (result.success) {
         socket.emit('joinedRoom', result.data);
+        
+        // CRITICAL: Notify other participants about new participant joining (원본 app.js와 동일)
         this.io.to(result.roomName).emit('updateParticipants', result.participants);
         
         // Start game flow if room is full
@@ -167,13 +169,14 @@ class GameManager {
    */
   async handleParticipantLeave(socket, roomName) {
     try {
+      // CRITICAL: ParticipantManager now handles ALL notifications internally
+      // No need to duplicate notifications here to prevent conflicts
       const result = await this.participantManager.handleParticipantLeave(socket, roomName);
+      
       if (result.success) {
-        this.io.to(roomName).emit('updateParticipants', result.participants);
-        
-        if (result.gameDropped) {
-          this.io.to(roomName).emit('gamePrematureOver', result.room);
-        }
+        logger.info(`Participant leave handled successfully for room ${roomName}`);
+      } else {
+        logger.warn(`Participant leave handling failed for room ${roomName}: ${result.error}`);
       }
     } catch (error) {
       logger.error('Error handling participant leave:', error);
@@ -304,16 +307,14 @@ class GameManager {
    */
   async handleDisconnection(socket) {
     try {
+      // CRITICAL: ParticipantManager now handles ALL notifications internally
+      // No need to duplicate notifications here to prevent conflicts
       const result = await this.participantManager.handleDisconnection(socket);
-      if (result.success && result.room) {
-        this.io.to(result.room.roomName).emit('updateParticipants', result.room.participants);
-        
-        if (result.gameDropped) {
-          this.io.to(result.room.roomName).emit('gameDropped', { 
-            reason: 'participant_disconnected',
-            role: result.participant?.role
-          });
-        }
+      
+      if (result.success) {
+        logger.info(`Disconnection handled successfully for socket ${socket.id}`);
+      } else {
+        logger.warn(`Disconnection handling failed for socket ${socket.id}: ${result.error}`);
       }
     } catch (error) {
       logger.error('Error handling disconnection:', error);
