@@ -13,9 +13,9 @@ Write concise, efficient code. ALWAYS COMMENT YOUR CODE. NEVER ERASE OLD COMMENT
 - Ensure comments are JSDoc3 styled
 
 ## LOGGING
-- We use WINSTON for logging. We should have a Winston logging modular file that we reference 
+<!-- - We use WINSTON for logging. We should have a Winston logging modular file that we reference 
 - Log EVERY logical connection and workflow of the codebase
-- Ensure a variety of the different logging levels depending on the workflow and logic
+- Ensure a variety of the different logging levels depending on the workflow and logic -->
 
 Your output should be the original code with your added comments. Make sure to preserve the original code's formatting and structure.
 
