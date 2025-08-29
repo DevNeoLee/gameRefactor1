@@ -16,6 +16,7 @@ const router = express.Router();
 router.use(sanitizeRequestBody);
 
 // Get games occurred on the day from query (GET /)
+// Apply general rate limiting for read operations
 router.get('/', 
   validateInput(validateSessionQuery), // Add input validation
   async (req, res) => {
@@ -78,6 +79,7 @@ router.get('/',
 });
 
 // Create a new game (POST /)
+// Apply strict rate limiting for game creation to prevent spam
 router.post('/', 
   validateInput(validateGameCreation), // Add input validation
   async (req, res) => {
@@ -115,19 +117,28 @@ router.post('/',
   }
 });
 
-// Update a game (PUT /)
-router.put('/', 
-  validateInput(validateGameUpdate), // Add input validation
-  async (req, res) => {
+// Update a game (PUT /:id)
+// Apply moderate rate limiting for game updates
+router.put('/:id', async (req, res) => {
   try {
+    const { id } = req.params; // Get ID from URL parameter
+    
+    // Validate ID format
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid game ID format'
+      });
+    }
+
     const updatedGame = await Game.findByIdAndUpdate(
-      req.body._id, 
+      id,           // Use URL parameter instead of body
       req.body, 
       { new: true, runValidators: true }
     );
 
     if (!updatedGame) {
-      log.warn('Game update failed: Game not found', { gameId: req.body._id });
+      log.warn('Game update failed: Game not found', { gameId: id });
       return res.status(StatusCodes.NOT_FOUND).json({ 
         success: false,
         message: "Game not found" 
@@ -148,12 +159,67 @@ router.put('/',
     log.error('Error occurred during game update:', { 
       error: err.message, 
       stack: err.stack,
-      gameId: req.body._id,
+      gameId: id,
       body: req.body 
     });
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
       success: false,
       message: "Error occurred during game update.",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Delete a game (DELETE /:id)
+// Apply strict rate limiting for game deletion to prevent abuse
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params; // Get ID from URL parameter
+    
+    // Validate ID format (MongoDB ObjectId format)
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Invalid game ID format'
+      });
+    }
+
+    // Find and delete the game
+    const deletedGame = await Game.findByIdAndDelete(id);
+
+    if (!deletedGame) {
+      log.warn('Game deletion failed: Game not found', { gameId: id });
+      return res.status(StatusCodes.NOT_FOUND).json({ 
+        success: false,
+        message: "Game not found" 
+      });
+    }
+    
+    log.info("Game deletion completed:", { 
+      gameId: deletedGame._id,
+      generation: deletedGame.generation,
+      variation: deletedGame.variation
+    });
+    
+    res.status(StatusCodes.OK).json({ 
+      success: true, 
+      message: 'Game deleted successfully.',
+      deletedGame: {
+        id: deletedGame._id,
+        generation: deletedGame.generation,
+        variation: deletedGame.variation,
+        deletedAt: new Date()
+      }
+    });
+  } catch (err) {
+    log.error('Error occurred during game deletion:', { 
+      error: err.message, 
+      stack: err.stack,
+      gameId: req.params.id
+    });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
+      success: false,
+      message: "Error occurred during game deletion.",
       error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
   }

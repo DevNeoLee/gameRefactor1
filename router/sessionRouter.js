@@ -68,28 +68,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update a session (PUT /) - Handles both body and ID-based updates
-router.put('/', async (req, res) => {
-  try {
-    let session;
-
-    if (req.body._id) { // Update by ID if provided
-      session = await Session.findByIdAndUpdate(req.body._id, req.body, { new: true });
-    } else { // Update based on request body content (if no ID)
-      session = await Session.findOneAndUpdate({ /* criteria based on your logic */ }, req.body, { new: true });
-    }
-
-    if (!session) {
-      res.status(StatusCodes.NOT_FOUND).json({ message: "Session not found, API" }); // Clear error message
-    }
-    console.log("Updated session to MongoDB through API", updatedSession?._id);
-    res.status(StatusCodes.OK).json({ success: true, data: session });
-  } catch (err) {
-    console.error(err);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Error updating session, API" });
-  }
-});
-
 // Update a session by ID (PUT /:id) - More specific update route
 router.put('/:id', async (req, res) => {
   const id = req.params.id;
@@ -104,6 +82,61 @@ router.put('/:id', async (req, res) => {
     res.json(updatedSession);
   } catch (error) {
     res.status(StatusCodes.BAD_REQUEST).json({ message: "Error updating session, API" }); // Informative error message
+  }
+});
+
+// Delete a session by ID
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params; // Get ID from URL parameter
+    
+    // Validate ID format (MongoDB ObjectId format)
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid session ID format'
+      });
+    }
+
+    // Find and delete the session
+    const deletedSession = await Session.findByIdAndDelete(id);
+
+    if (!deletedSession) {
+      console.log('Session deletion failed: Session not found', { sessionId: id });
+      return res.status(404).json({ 
+        success: false,
+        message: "Session not found" 
+      });
+    }
+    
+    console.log('Session deletion completed:', { 
+      sessionId: deletedSession._id,
+      ipAddress: deletedSession.ipAddress,
+      sessionStartTime: deletedSession.sessionStartTime
+    });
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Session deleted successfully.',
+      deletedSession: {
+        id: deletedSession._id,
+        ipAddress: deletedSession.ipAddress,
+        sessionStartTime: deletedSession.sessionStartTime,
+        role: deletedSession.role,
+        deletedAt: new Date()
+      }
+    });
+  } catch (err) {
+    console.error('Error occurred during session deletion:', { 
+      error: err.message, 
+      stack: err.stack,
+      sessionId: req.params.id
+    });
+    res.status(500).json({ 
+      success: false,
+      message: "Error occurred during session deletion.",
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
