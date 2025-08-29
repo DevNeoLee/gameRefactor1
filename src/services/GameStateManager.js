@@ -64,7 +64,7 @@ class GameStateManager {
         return;
       }
 
-      // 원본 app.js의 getEarningBeforeLoss 함수
+      // Original app.js getEarningBeforeLoss function
       const getEarningBeforeLoss = (choice) => {
         const choiceNumeral = Number(choice)
      
@@ -77,21 +77,21 @@ class GameStateManager {
         }
       }
 
-      // 원본 app.js의 getWaterHeight 함수
+      // Original app.js getWaterHeight function
       const getWaterHeight = (roundIndex) => {
         const lowVariableWaterLevel = [9, 9, 9, 9, 10, 12, 10, 10, 12, 10, 9, 9];
         const highVariableWaterLevel = [8, 7, 14, 11, 16, 11, 9, 16, 8, 10];
         return roomFound.nm.length > 0 ? highVariableWaterLevel[roundIndex] : highVariableWaterLevel[roundIndex]
       }
 
-      // 원본 app.js의 calculateStockInvested 함수
+      // Original app.js calculateStockInvested function
       const calculateStockInvested = (room, sortedResult, roundIndex) => {
         const totalStockInvested = sortedResult.reduce((acc, value) => Number(value.results[roundIndex]?.choice) + acc, 0)
         room.stockInvested[roundIndex] = totalStockInvested;
         return totalStockInvested;
       }
 
-      // 원본 app.js의 getDepreciatedPreviousLeveeStock 함수
+      // Original app.js getDepreciatedPreviousLeveeStock function
       const getDepreciatedPreviousLeveeStock = (roundIndex) => {
         if (roundIndex < 1) {
           return 75;
@@ -100,7 +100,7 @@ class GameStateManager {
         }
       }
 
-      // 원본 app.js의 getLeveeHeight 함수
+      // Original app.js getLeveeHeight function
       const getLeveeHeight = (currentLeveeStock) => {
         if (currentLeveeStock < 30) {
           return 0;
@@ -127,7 +127,7 @@ class GameStateManager {
         }
       }
 
-      // 원본 app.js의 getFloodSeverity 함수
+      // Original app.js getFloodSeverity function
       const getFloodSeverity = (severity) => {
         if (severity <= 0) {
           return 0;
@@ -146,7 +146,7 @@ class GameStateManager {
         } 
       }
 
-      // 원본 app.js의 getFloodLoss 함수
+      // Original app.js getFloodLoss function
       const getFloodLoss = (roomFound, sortedResult, stockInvested, waterHeight, roundIndex) => {
         const depreciatedPreviousLeveeStock = getDepreciatedPreviousLeveeStock(roundIndex) 
         const currentLeveeStock = depreciatedPreviousLeveeStock + stockInvested;
@@ -172,16 +172,16 @@ class GameStateManager {
         return mappedSortedResult;
       }
 
-      // 원본 app.js의 sortResult 함수 (필요시 구현)
+      // Original app.js sortResult function (implement if needed)
       const sortResult = (participants, room) => {
-        // 원본 app.js의 sortResult 로직을 여기에 구현
+        // Implement original app.js sortResult logic here
         return participants.sort((a, b) => b.totalEarnings - a.totalEarnings);
       }
 
       participant.results = participant?.results?.map((ele) => ele.roundIndex == roundIndex ? ({...ele, roundIndex, round, choice, earningBeforeLoss}) : ele)
       participant.totalEarnings = participant.totalEarnings + participant.results[roundIndex].totalEarnings;
 
-      // 원본 app.js와 동일하게 resultArrived 이벤트 전송
+      // Same as original app.js: emit resultArrived event
       this.io.in(room_name).emit('resultArrived', {participants, roundIndex});
 
       const allFiveEnteredResults = participants.filter(
@@ -228,10 +228,10 @@ class GameStateManager {
         //game state save in DB
         await this.roomManager.updateGameToDB(roomFound)
 
-        //game state share to every villagers (원본 app.js와 동일)
+        //game state share to every villagers (same as original app.js)
         this.io.in(room_name).emit('totalGroupResultArrived', {waterHeight, currentLeveeHeight, currentLeveeStock, floodLoss: floodSeverity, result: updatedSortedResultWithNewEarnings, roundIndex});
 
-        // 원본 app.js와 동일하게 resultDuration 타이머 시작
+        // Same as original app.js: start resultDuration timer
         this.startResultDurationTimer(roomFound, roundIndex);
         
         // 추가 디버깅: 현재 라운드의 모든 참가자 응답 상태 확인
@@ -261,7 +261,7 @@ class GameStateManager {
       // This prevents cumulative timer conflicts that build up over multiple rounds
       this.clearAllTimersForRound(room);
 
-      // Update room currentStep based on round index (원본 app.js와 동일)
+      // Update room currentStep based on round index (same as original app.js)
       if (room.roundIndex === 10) {
         room.now = 76;
       } else if (room.roundIndex === 2) {
@@ -270,7 +270,7 @@ class GameStateManager {
         room.now = 22;
       }
 
-      // Emit round start event to all clients (원본 app.js와 동일)
+      // Emit round start event to all clients (same as original app.js)
       logger.info(`Emitting roundStart for room ${room.roomName}, round ${room.roundIndex}, duration: ${room.roundDuration}, inGame: ${room.inGame}`);
       
       this.io.in(room.roomName).emit('roundStart', {
@@ -281,7 +281,7 @@ class GameStateManager {
       });
 
       if (room.inGame) {
-        // Start the round timer (원본 app.js와 동일)
+        // Start the round timer (same as original app.js)
         logger.info(`Starting round timer for room ${room.roomName}, round ${room.roundIndex}, duration: ${room.roundDuration}`);
         
         // CRITICAL: Ensure roundDuration is set correctly and reset any inherited state
@@ -385,7 +385,7 @@ class GameStateManager {
     try {
       logger.info(`CRITICAL: Clearing ALL timers for round ${room.roundIndex} in room ${room.roomName}`);
       
-      // Clear all possible timers (원본 app.js와 동일한 순서)
+      // Clear all possible timers (same order as original app.js)
       if (room.resultTimer) {
         clearInterval(room.resultTimer);
         room.resultTimer = null;
@@ -480,7 +480,7 @@ class GameStateManager {
         return;
       }
       
-      // CRITICAL: Clear round timer (원본 app.js와 동일)
+      // CRITICAL: Clear round timer (same as original app.js)
       if (room.roundTimer) {
         clearInterval(room.roundTimer);
         room.roundTimer = null;
@@ -500,7 +500,7 @@ class GameStateManager {
         message: 'Round phase ended, showing results'
       });
 
-      // CRITICAL: Set resultDuration and start timer (원본 app.js와 동일)
+      // CRITICAL: Set resultDuration and start timer (same as original app.js)
       room.resultDuration = 20;
       logger.info(`Starting result timer for room ${room.roomName}, round ${room.roundIndex}, duration: ${room.resultDuration}`);
       
@@ -535,13 +535,13 @@ class GameStateManager {
     }
   }
 
-  // 원본 app.js의 resultDuration 타이머 로직을 그대로 구현
+        // Implement original app.js resultDuration timer logic exactly
   startResultDurationTimer(room, roundIndex) {
     // 이 메서드는 startToCountResultForAll과 중복되므로 제거하고 startToCountResultForAll 사용
     this.startToCountResultForAll(room);
   }
 
-  // 원본 app.js의 endRound 함수 로직을 그대로 구현
+        // Implement original app.js endRound function logic exactly
   endRound(room) {
     try {
       logger.info(`endRound called for room ${room.roomName}, round ${room.roundIndex} - cleaning up timers`);
@@ -579,14 +579,14 @@ class GameStateManager {
         logger.debug(`Cleared roundTimer in endRound for room ${room.roomName}`);
       }
 
-      // Additional cleanup (원본 app.js와 동일)
+      // Additional cleanup (same as original app.js)
       if (room.gameStopTimer) {
         clearInterval(room.gameStopTimer);
         room.gameStopTimer = null;
         logger.debug(`Cleared gameStopTimer in endRound for room ${room.roomName}`);
       }
 
-      // resultDuration 재설정 (원본 app.js와 동일)
+      // Reset resultDuration (same as original app.js)
       room.resultDuration = 20;
       logger.debug(`Reset resultDuration to 20 for room ${room.roomName}`);
 

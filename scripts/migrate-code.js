@@ -88,7 +88,7 @@ const server = http.createServer(app);
 // Import configuration and utilities
 const { getConfig } = require('./config/environment');
 const logger = require('./utils/logger');
-const dbConnect = require('./utils/dbConnect');
+const mongoDB = require('./utils/mongoDB');
 
 // Import the new modular architecture
 const { setupMiddleware } = require('./src/middleware');
@@ -100,7 +100,7 @@ const GameManager = require('./src/services/GameManager');
 const config = getConfig();
 
 // Initialize database connection
-dbConnect();
+mongoDB();
 
 // Setup middleware (CORS, Helmet, body parsing, etc.)
 setupMiddleware(app, config);

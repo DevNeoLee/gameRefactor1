@@ -511,7 +511,7 @@ class RoomManager {
     // Emit rolesAssigned event to all clients in the room immediately (following original app.js)
     this.io.in(room.roomName).emit('rolesAssigned', { roles: rolesObject });
     
-    // 원본 app.js와 동일하게: 역할 배정 후 바로 다음 단계로 진행
+    // Same as original app.js: proceed to next step immediately after role assignment
     if (this.gameFlowManager) {
       logger.info(`Calling advanceGameStep directly from assignRoles for room: ${room.roomName}`);
       this.gameFlowManager.advanceGameStep(room);
@@ -519,7 +519,7 @@ class RoomManager {
       logger.error('GameFlowManager not available in RoomManager');
     }
     
-    // 데이터베이스 업데이트는 비동기로 처리
+    // Database update is handled asynchronously
     this.updateGameToDB(room).then(() => {
       logger.info(`Room ${room.roomName} updated in database after role assignment`);
     }).catch(err => {

@@ -483,7 +483,7 @@ class GameFlowManager {
     // Only advance to next step if all participants have completed
     const shouldAdvance = completedCount === totalCount;
     
-    // 원본 app.js와 동일하게 모든 참가자가 완료되면 다음 단계로 진행
+    // Same as original app.js: proceed to next step when all participants complete
     if (shouldAdvance) {
       logger.info(`All participants completed ${step} for room ${roomName}, advancing to next step`);
       this.advanceGameStep(room);
@@ -518,7 +518,7 @@ class GameFlowManager {
     // Notify all clients that game is starting
     this.io.in(room.roomName).emit('startGame', room);
     
-    // 원본 app.js와 동일하게 startRound 호출하여 첫 번째 라운드 시작
+    // Same as original app.js: call startRound to begin the first round
     if (this.gameStateManager) {
       this.gameStateManager.startRound(room);
     } else {
@@ -534,7 +534,7 @@ class GameFlowManager {
     try {
       logger.debug(`Clearing all timers for room ${room.roomName} before step: ${room.currentStep}`);
       
-      // Clear all possible timers (원본 app.js와 동일한 순서)
+      // Clear all possible timers (same order as original app.js)
       if (room.resultTimer) {
         clearInterval(room.resultTimer);
         room.resultTimer = null;

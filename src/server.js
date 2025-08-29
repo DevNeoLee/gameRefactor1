@@ -10,7 +10,7 @@ const path = require('path');
 // Import configuration and utilities
 const { getConfig } = require('../config/environment');
 const logger = require('../utils/logger');
-const dbConnect = require('../utils/dbConnect');
+const mongoDB = require('../utils/mongoDB');
 
 // Import middleware
 const { setupMiddleware } = require('./middleware');
@@ -25,7 +25,7 @@ const server = http.createServer(app);
 const config = getConfig();
 
 // Initialize database connection
-dbConnect();
+mongoDB();
 
 // Setup middleware (CORS, Helmet, body parsing, etc.)
 setupMiddleware(app, config);

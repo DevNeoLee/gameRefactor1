@@ -86,7 +86,7 @@ config/
 ```
 utils/
 ├── validation.js            # Input validation (4.6KB, 191 lines)
-├── dbConnect.js             # Database connection (390B, 15 lines)
+├── mongoDB.js             # Database connection (390B, 15 lines)
 └── logger.js                # Logging utility (195B, 11 lines)
 ```
 
@@ -561,7 +561,7 @@ config/
 ```
 utils/
 ├── validation.js            # Input validation (4.6KB, 191 lines)
-├── dbConnect.js             # Database connection (390B, 15 lines)
+├── mongoDB.js             # Database connection (390B, 15 lines)
 └── logger.js                # Logging utility (195B, 11 lines)
 ```
 

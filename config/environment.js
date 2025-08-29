@@ -1,32 +1,32 @@
 /**
- * 환경별 설정 관리
- * 개발, 테스트, 프로덕션 환경에 따른 설정값들을 관리
+ * Environment-specific configuration management
+ * Manages configuration values for development, test, and production environments
  */
 
 const path = require('path');
 
-// 기본 환경 설정
+// Default environment configuration
 const defaultConfig = {
-  // 서버 설정
+  // Server configuration
   port: process.env.PORT || 5000,
   host: process.env.HOST || 'localhost',
   
-  // 데이터베이스 설정
+  // Database configuration
   mongoUri: process.env.MONGO_URI,
   
-  // CORS 설정
+  // CORS configuration
   cors: {
     development: {
       origin: ['http://localhost:3000', 'http://localhost:5000'],
       credentials: true
     },
     production: {
-      origin: [process.env.ALLOWED_ORIGIN || 'https://yourdomain.com'],
+      origin: [process.env.ALLOWED_ORIGIN],
       credentials: true
     }
   },
   
-  // 보안 설정
+  // Security configuration
   security: {
     helmet: {
       contentSecurityPolicy: {
@@ -45,7 +45,7 @@ const defaultConfig = {
     }
   },
   
-  // 로깅 설정
+  // Logging configuration
   logging: {
     level: process.env.LOG_LEVEL || 'info',
     file: {
@@ -56,12 +56,12 @@ const defaultConfig = {
     }
   },
   
-  // 게임 설정
+  // Game configuration
   game: {
     maxParticipantsPerRoom: 5,
     maxRooms: 100,
-    roundDuration: 300000, // 5분
-    waitingRoomTimeout: 60000, // 1분
+    roundDuration: 300000, // 5 minutes
+    waitingRoomTimeout: 60000, // 1 minute
     rounds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
     roles: ['Villager1', 'Villager2', 'Villager3', 'Villager4', 'Villager5'],
     gameFlows: {
@@ -74,7 +74,7 @@ const defaultConfig = {
     }
   },
   
-  // Socket.IO 설정
+  // Socket.IO configuration
   socket: {
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -83,7 +83,7 @@ const defaultConfig = {
   }
 };
 
-// 환경별 설정
+// Environment-specific configurations
 const environmentConfigs = {
   development: {
     ...defaultConfig,
@@ -128,18 +128,18 @@ const environmentConfigs = {
   }
 };
 
-// 현재 환경 가져오기
+// Get current environment
 const getCurrentEnvironment = () => {
   return process.env.NODE_ENV || 'development';
 };
 
-// 환경별 설정 가져오기
+// Get environment-specific configuration
 const getConfig = () => {
   const env = getCurrentEnvironment();
   return environmentConfigs[env] || environmentConfigs.development;
 };
 
-// 특정 설정값 가져오기
+// Get specific configuration value
 const getConfigValue = (key) => {
   const config = getConfig();
   return key.split('.').reduce((obj, k) => obj && obj[k], config);
